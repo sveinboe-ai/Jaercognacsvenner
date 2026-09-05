@@ -870,11 +870,23 @@ async function tegnMedlem(bruker) {
   }
   treff.forEach(d => alle.push({ id: d.id, ...d.data() }));
   medlemmer = alle;
-  try {
-    if (erJcc) { await lastBlendinger(); await lastArkiv(); await lastBlendingArkiv(); }
-    await lastSammendrag();
-  } catch (err) {
-    if (!erJcc) { blendinger = []; historikk = []; blendingArkiv = []; }
+
+  // Hver del lastes for seg, slik at én feil ikke tar med seg resten
+  const feilet = [];
+  const hent = async (navn, fn) => {
+    try { await fn(); } catch (err) { feilet.push(navn + " (" + (err.code || err.message) + ")"); }
+  };
+  if (erJcc) {
+    await hent("blendinger", lastBlendinger);
+    await hent("arkiv", lastArkiv);
+    await hent("blendingarkiv", lastBlendingArkiv);
+  } else {
+    blendinger = []; historikk = []; blendingArkiv = [];
+  }
+  await hent("sammendrag", lastSammendrag);
+  if (feilet.length) {
+    melding("meldingMedlem", "Klarte ikke hente: " + feilet.join(", ")
+      + ". Sjekk at de nyeste sikkerhetsreglene er publisert i Firebase.", "feil");
   }
 
   tegnMedlemsliste();
