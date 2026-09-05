@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.17 – 5. september 2026 -->
+     Versjon 1.18 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -553,7 +553,7 @@
 
   <footer class="bunn">
     Spørsmål om medlemskap eller registrerte opplysninger rettes til admin. Du kan når som helst be om å bli slettet fra registeret.
-    <span class="versjon">Versjon 1.17</span>
+    <span class="versjon">Versjon 1.18</span>
   </footer>
 </div>
 
@@ -1886,9 +1886,11 @@ function tegnAnsiennitet() {
     return;
   }
 
-  // De som har sluttet står ikke på ansiennitetslista
+  // De som har sluttet står ikke på ansiennitetslista.
+  // Listen ligger i koden så den virker uten import; flere kan legges til via "slutt".
+  const SLUTTET = ["RE", "EK", "KG", "OAB", "DOH", "KV", "JAA", "OEL", "GT"];
   const rader = alle
-    .filter(init => !arkivSlutt[init])
+    .filter(init => !arkivSlutt[init] && !SLUTTET.includes(init))
     .map(init => {
       const oppgitt = arkivStart[init];
       const dato = oppgitt || funnet[init];
