@@ -150,6 +150,13 @@
     background:none;border:1px solid var(--linje);border-radius:1px;resize:vertical;
   }
   textarea:focus{outline:none;border-color:var(--kobber)}
+  .sortering{display:flex;gap:1.25rem;margin-top:1.5rem}
+  .sortvalg{
+    font:inherit;font-size:.88rem;background:none;border:0;padding:.2rem 0;
+    color:var(--dempet);cursor:pointer;border-bottom:2px solid transparent;
+  }
+  .sortvalg[aria-current="true"]{color:var(--blekk);border-bottom-color:var(--kobber)}
+  .sortvalg:focus-visible{outline:2px solid var(--kobber);outline-offset:3px}
   .rad{display:flex;align-items:baseline;gap:.9rem;padding:.7rem 0;border-bottom:1px solid var(--linje)}
   .rad:last-child{border-bottom:0}
   .rad .venstre{flex:1;min-width:0}
@@ -418,7 +425,11 @@
           </form>
         </div>
 
-        <div id="listeArkiv" style="margin-top:1.5rem"></div>
+        <div class="sortering">
+          <button class="sortvalg" type="button" data-sort="dato" aria-current="true">Nyeste først</button>
+          <button class="sortvalg" type="button" data-sort="snitt">Beste først</button>
+        </div>
+        <div id="listeArkiv" style="margin-top:1rem"></div>
       </div>
 
       <div class="boks" id="panelBlending" hidden>
@@ -1336,7 +1347,16 @@ function tegnArkiv() {
     return;
   }
 
-  historikk.forEach(h => {
+  const snittFor = h => {
+    const p = Object.values(h.poeng || {}).filter(x => typeof x === "number");
+    return p.length ? p.reduce((a, b) => a + b, 0) / p.length : -1;
+  };
+
+  const sortert = historikk.slice().sort((a, b) => arkivSortering === "snitt"
+    ? snittFor(b) - snittFor(a)
+    : (b.dato || "").localeCompare(a.dato || ""));
+
+  sortert.forEach(h => {
     const poeng = Object.values(h.poeng || {}).filter(x => typeof x === "number");
     const snitt = poeng.length ? poeng.reduce((a, b) => a + b, 0) / poeng.length : null;
     const rad = radElement(
@@ -1366,6 +1386,17 @@ function tegnArkiv() {
 }
 
 let apentArkiv = null;
+let arkivSortering = "dato";
+
+document.querySelectorAll(".sortvalg").forEach(b => {
+  b.addEventListener("click", () => {
+    arkivSortering = b.dataset.sort;
+    document.querySelectorAll(".sortvalg").forEach(x => {
+      x.setAttribute("aria-current", String(x.dataset.sort === arkivSortering));
+    });
+    tegnArkiv();
+  });
+});
 
 /* ---------- Import ---------- */
 $("knappImport").addEventListener("click", () => {
