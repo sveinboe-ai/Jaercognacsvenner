@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.8 – 5. september 2026 -->
+     Versjon 1.9 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -543,7 +543,7 @@
 
   <footer class="bunn">
     Spørsmål om medlemskap eller registrerte opplysninger rettes til admin. Du kan når som helst be om å bli slettet fra registeret.
-    <span class="versjon">Versjon 1.8</span>
+    <span class="versjon">Versjon 1.9</span>
   </footer>
 </div>
 
@@ -1016,29 +1016,35 @@ function klasseTabell(klasse) {
     .forEach(b => {
       GLASS.forEach(g => {
         const navn = b.fasit[g];
-        if (!samlet[navn]) samlet[navn] = { poeng: [], ganger: 0 };
+        if (!samlet[navn]) samlet[navn] = { poeng: [], ganger: 0, hendelser: [] };
         samlet[navn].ganger += 1;
+        const hendelse = { dato: b.dato, arkiv: false, poeng: {} };
         Object.keys(b.svar || {}).forEach(uid => {
           const sv = b.svar[uid][g];
-          if (sv && typeof sv.poeng === "number") samlet[navn].poeng.push(sv.poeng);
+          if (sv && typeof sv.poeng === "number") {
+            samlet[navn].poeng.push(sv.poeng);
+            hendelse.poeng[uid] = sv.poeng;
+          }
         });
+        samlet[navn].hendelser.push(hendelse);
       });
     });
   historikk
     .filter(h => h.klassifisering === klasse)
     .forEach(h => {
-      if (!samlet[h.cognac]) samlet[h.cognac] = { poeng: [], ganger: 0 };
+      if (!samlet[h.cognac]) samlet[h.cognac] = { poeng: [], ganger: 0, hendelser: [] };
       samlet[h.cognac].ganger += 1;
       Object.values(h.poeng || {}).forEach(p => {
         if (typeof p === "number") samlet[h.cognac].poeng.push(p);
       });
+      samlet[h.cognac].hendelser.push({ dato: h.dato, arkiv: true, poeng: h.poeng || {} });
     });
 
   return Object.keys(samlet)
     .map(navn => {
       const d = samlet[navn];
       const snitt = d.poeng.length ? d.poeng.reduce((a, b) => a + b, 0) / d.poeng.length : null;
-      return { navn, snitt, antall: d.poeng.length, ganger: d.ganger };
+      return { navn, snitt, antall: d.poeng.length, ganger: d.ganger, hendelser: d.hendelser || [] };
     })
     .sort((a, b) => (b.snitt || 0) - (a.snitt || 0));
 }
@@ -1568,10 +1574,71 @@ function tegnKlasse(klasse) {
       ? c.antall + (c.antall === 1 ? " karakter" : " karakterer")
         + (c.ganger ? ", smakt " + c.ganger + (c.ganger === 1 ? " gang" : " ganger") : "")
       : "Ingen karakterer lagt inn";
-    boks.append(medPlass(
+    const rad = medPlass(
       radElement(c.navn, under, c.snitt === null || c.snitt === undefined ? "–" : tall(c.snitt)),
-      plasser[i]));
+      plasser[i]);
+
+    // Bare de som har tilgang til rådataene kan folde ut hvem som ga hva
+    if (erJcc && c.hendelser && c.hendelser.length) {
+      rad.classList.add("valgbar");
+      const noekkel = klasse + "|" + c.navn;
+      rad.addEventListener("click", () => {
+        apenKlasseRad = apenKlasseRad === noekkel ? null : noekkel;
+        tegnKlasse(klasse);
+      });
+      boks.append(rad);
+      if (apenKlasseRad === noekkel) boks.append(klasseDetalj(c));
+    } else {
+      boks.append(rad);
+    }
   });
+}
+
+// Hvem smakte, og hva ga de – én bolk per kveld, nyeste først
+function klasseDetalj(c) {
+  const boks = document.createElement("div");
+  boks.className = "detalj";
+
+  c.hendelser
+    .slice()
+    .sort((a, b) => (b.dato || "").localeCompare(a.dato || ""))
+    .forEach(h => {
+      const verdier = Object.values(h.poeng || {}).filter(x => typeof x === "number");
+      const snitt = verdier.length ? verdier.reduce((a, b) => a + b, 0) / verdier.length : null;
+
+      const overskrift = document.createElement("div");
+      overskrift.className = "rad";
+      const v = document.createElement("div");
+      v.className = "venstre";
+      const t = document.createElement("div");
+      t.className = "tittel";
+      t.textContent = norskDato(h.dato);
+      v.append(t);
+      if (verdier.length) {
+        const u = document.createElement("div");
+        u.className = "under";
+        u.textContent = verdier.length + (verdier.length === 1 ? " karakter" : " karakterer");
+        v.append(u);
+      }
+      overskrift.append(v);
+      const tallet = document.createElement("div");
+      tallet.className = "tall";
+      tallet.textContent = snitt === null ? "–" : tall(snitt);
+      overskrift.append(tallet);
+      boks.append(overskrift);
+
+      Object.keys(h.poeng || {})
+        .sort((a, b) => h.poeng[b] - h.poeng[a])
+        .forEach(noekkel => {
+          const navn = h.arkiv ? arkivNavnFor(noekkel) : navnPa(noekkel);
+          const r = radElement(navn, "", tall(h.poeng[noekkel]));
+          r.style.paddingLeft = "1.2rem";
+          r.querySelector(".tall").classList.add("svak");
+          boks.append(r);
+        });
+    });
+
+  return boks;
 }
 
 /* ---------- Arkiv fra den gamle poengbasen ---------- */
@@ -1739,6 +1806,7 @@ function tegnArkiv() {
 }
 
 let apentArkiv = null;
+let apenKlasseRad = null;
 let arkivSortering = "dato";
 
 document.querySelectorAll(".sortvalg").forEach(b => {
