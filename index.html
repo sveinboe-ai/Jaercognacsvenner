@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.16 – 5. september 2026 -->
+     Versjon 1.17 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -193,6 +193,7 @@
   .valgbar:hover .tittel{color:var(--kobber)}
   .detalj{margin:1.25rem 0 0;padding:1.1rem 0 0;border-top:2px solid var(--kobber)}
   /* Utnevnt av klubben: fast ramme */
+  .stjerner{flex-shrink:0;font-size:.85rem;letter-spacing:.05em;line-height:1}
   .utnevnt{
     flex-shrink:0;font-size:.7rem;letter-spacing:.05em;white-space:nowrap;
     padding:.1rem .45rem;border:1px solid var(--kobber);color:var(--kobber);
@@ -552,7 +553,7 @@
 
   <footer class="bunn">
     Spørsmål om medlemskap eller registrerte opplysninger rettes til admin. Du kan når som helst be om å bli slettet fra registeret.
-    <span class="versjon">Versjon 1.16</span>
+    <span class="versjon">Versjon 1.17</span>
   </footer>
 </div>
 
@@ -1857,6 +1858,11 @@ function arSiden(iso) {
   return Math.max(klubbAr() - Number(String(iso).slice(0, 4)), 0);
 }
 
+// Én stjerne for hvert fylte femår
+function stjerner(ar) {
+  return "\u2B50".repeat(Math.floor(ar / 5));
+}
+
 function arMellom(fra, til) {
   return Math.max(Number(String(til).slice(0, 4)) - Number(String(fra).slice(0, 4)), 0);
 }
@@ -1897,11 +1903,21 @@ function tegnAnsiennitet() {
   }
 
   rader.forEach(r => {
-    boks.append(settUtnevnte(radElement(
+    const rad = settUtnevnte(radElement(
       arkivNavnFor(r.init),
       (r.oppgitt ? "Medlem siden " : "Første registrering ") + norskDato(r.dato),
       r.ar + " år"
-    ), r.init));
+    ), r.init);
+
+    const merker = stjerner(r.ar);
+    if (merker) {
+      const stjerne = document.createElement("span");
+      stjerne.className = "stjerner";
+      stjerne.textContent = merker;
+      stjerne.title = Math.floor(r.ar / 5) * 5 + " år som medlem";
+      rad.insertBefore(stjerne, rad.lastChild);
+    }
+    boks.append(rad);
   });
 }
 
