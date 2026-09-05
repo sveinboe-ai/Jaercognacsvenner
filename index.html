@@ -48,12 +48,28 @@
     margin:0 0 .5rem;
   }
   .undertittel{margin:0;color:var(--skifer-myk);max-width:30rem}
-  .klasser{
-    margin:1.25rem 0 0;padding:0;list-style:none;
+  .meny{
+    margin:1.25rem 0 0;padding:0;
     display:flex;flex-wrap:wrap;gap:.4rem .5rem;
-    font-size:.8rem;color:var(--skifer-myk);
   }
-  .klasser li{border:1px solid var(--linje);border-radius:2px;padding:.15rem .5rem}
+  .menyvalg{
+    font:inherit;font-size:.82rem;line-height:1.4;
+    padding:.2rem .6rem;cursor:pointer;
+    background:none;color:var(--skifer-myk);
+    border:1px solid var(--linje);border-radius:2px;
+  }
+  .menyvalg:hover:not([disabled]){color:var(--skifer);border-color:var(--skifer-myk)}
+  .menyvalg[disabled]{cursor:default;opacity:.75}
+  .menyvalg[aria-current="true"]{
+    color:var(--papir);background:var(--skifer);border-color:var(--skifer);
+  }
+  .menyvalg:focus-visible{outline:2px solid var(--fat);outline-offset:2px}
+
+  .boks{
+    border:1px solid var(--linje);border-radius:2px;
+    padding:1.1rem 1.15rem;margin-bottom:1.25rem;
+  }
+  .boks > h2, .boks > h3{margin-top:0}
 
   h2{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:1.35rem;margin:0 0 .35rem}
   h3{font-size:1rem;font-weight:600;margin:2rem 0 .5rem}
@@ -118,9 +134,6 @@
   .kontakt a:hover{color:var(--fat);text-decoration:underline}
   .kontakt .mobil{font-variant-numeric:tabular-nums;letter-spacing:.02em}
   .medlem .handling{display:flex;align-items:center;gap:.4rem;flex-shrink:0;margin-left:auto}
-  .status{font-size:.75rem;padding:.1rem .45rem;border:1px solid var(--linje);border-radius:2px;white-space:nowrap}
-  .status.venter{border-color:var(--fat);color:var(--fat)}
-  .status.sluttet{color:var(--skifer-myk)}
   .antall{font-weight:400;color:var(--skifer-myk)}
 
   .bunn{margin-top:3rem;padding-top:1.25rem;border-top:1px solid var(--linje);font-size:.85rem;color:var(--skifer-myk)}
@@ -133,9 +146,15 @@
     <span class="merke" aria-hidden="true"></span>
     <h1>Jærcognacens venner</h1>
     <p class="undertittel">Medlemsregisteret for venner av cognac på Jæren. Registrer deg her, så er du med med en gang.</p>
-    <ul class="klasser">
-      <li>VS</li><li>VSOP</li><li>XO</li><li>Blending</li><li>Cocktail</li>
-    </ul>
+    <nav class="meny" id="meny" aria-label="Seksjoner">
+      <button class="menyvalg" type="button" data-panel="profil" hidden>Min profil</button>
+      <button class="menyvalg" type="button" data-panel="medlemmer" hidden>Medlemmer</button>
+      <button class="menyvalg" type="button" data-panel="VS" disabled>VS</button>
+      <button class="menyvalg" type="button" data-panel="VSOP" disabled>VSOP</button>
+      <button class="menyvalg" type="button" data-panel="XO" disabled>XO</button>
+      <button class="menyvalg" type="button" data-panel="Blending" disabled>Blending</button>
+      <button class="menyvalg" type="button" data-panel="Cocktail" disabled>Cocktail</button>
+    </nav>
   </header>
 
   <div id="oppsettmangler" class="melding feil" hidden>
@@ -231,20 +250,21 @@
     <section id="visMedlem" hidden>
       <div id="meldingMedlem" class="melding" hidden></div>
 
-      <h2 id="hilsen">Min side</h2>
-      <p class="detalj" id="minInfo"></p>
+      <div class="boks" id="panelProfil">
+        <h2 id="hilsen">Min side</h2>
+        <p class="hjelp" id="minInfo" style="margin-bottom:1.25rem"></p>
+        <button class="knapp stille liten" id="knappUt" type="button">Logg ut</button>
+      </div>
 
-      <div id="medlemsliste" hidden>
+      <div class="boks" id="panelMedlemmer" hidden>
         <h3 id="tittelMedlemmer">Medlemmer</h3>
         <div id="listeAktive"></div>
       </div>
 
-      <div id="adminpanel" hidden>
-        <h3>Tidligere medlemmer</h3>
-        <div id="listeSluttet"></div>
+      <div class="boks" id="panelKlasse" hidden>
+        <h3 id="klasseTittel"></h3>
+        <p class="hjelp" style="margin:0">Poengregistrering er ikke bygget ennå. Denne seksjonen står klar til den kommer.</p>
       </div>
-
-      <p style="margin-top:2rem"><button class="knapp stille liten" id="knappUt" type="button">Logg ut</button></p>
     </section>
   </main>
 
@@ -261,7 +281,7 @@ import {
   onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs,
+  getFirestore, doc, getDoc, setDoc, collection, getDocs,
   query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -313,6 +333,31 @@ function feiltekst(e) {
   if (k === "permission-denied") return "Du har ikke tilgang til dette.";
   return "Noe gikk galt: " + (e && e.message ? e.message : "ukjent feil");
 }
+
+/* ---------- Meny ---------- */
+function apnePanel(navn) {
+  const erKlasse = !["profil", "medlemmer"].includes(navn);
+  $("panelProfil").hidden = navn !== "profil";
+  $("panelMedlemmer").hidden = navn !== "medlemmer";
+  $("panelKlasse").hidden = !erKlasse;
+  if (erKlasse) $("klasseTittel").textContent = navn;
+  document.querySelectorAll(".menyvalg").forEach(b => {
+    b.setAttribute("aria-current", String(b.dataset.panel === navn));
+  });
+}
+
+function menyTilgjengelig(paa) {
+  document.querySelectorAll(".menyvalg").forEach(b => {
+    const personlig = ["profil", "medlemmer"].includes(b.dataset.panel);
+    if (personlig) b.hidden = !paa;
+    else b.disabled = !paa;
+    if (!paa) b.removeAttribute("aria-current");
+  });
+}
+
+document.querySelectorAll(".menyvalg").forEach(b => {
+  b.addEventListener("click", () => apnePanel(b.dataset.panel));
+});
 
 /* ---------- Faner ---------- */
 $("faneMedlem").addEventListener("click", () => byttFane(true));
@@ -416,6 +461,7 @@ $("knappUt").addEventListener("click", () => signOut(auth));
 $("knappUtUbekreftet").addEventListener("click", () => signOut(auth));
 
 function visUbekreftet(bruker, tekst, type) {
+  menyTilgjengelig(false);
   $("ubekreftetEpost").textContent = bruker.email;
   melding("meldingUbekreftet", tekst || "", type);
   vis("visUbekreftet");
@@ -463,7 +509,7 @@ function penMobil(nr) {
   return nr || "";
 }
 
-function kort(m, admin) {
+function kort(m) {
   const rad = document.createElement("div");
   rad.className = "medlem";
 
@@ -496,52 +542,21 @@ function kort(m, admin) {
   }
   info.append(kontakt);
 
-  const hoyre = document.createElement("div");
-  hoyre.className = "handling";
-  if (m.status !== "aktiv") {
-    const merkelapp = document.createElement("span");
-    merkelapp.className = "status " + m.status;
-    merkelapp.textContent = m.status === "venter" ? "Til godkjenning" : "Sluttet";
-    hoyre.append(merkelapp);
-  }
-  if (admin) {
-    if (m.status === "venter") hoyre.append(handlingsknapp("Godkjenn", m.id, "aktiv"));
-    if (m.status === "aktiv") hoyre.append(handlingsknapp("Sett sluttet", m.id, "sluttet"));
-    if (m.status === "sluttet") hoyre.append(handlingsknapp("Aktiver", m.id, "aktiv"));
-  }
-
-  rad.append(merke, info, hoyre);
+  rad.append(merke, info);
   return rad;
 }
 
-function handlingsknapp(tekst, uid, nyStatus) {
-  const b = document.createElement("button");
-  b.className = "knapp liten" + (nyStatus === "aktiv" ? "" : " stille");
-  b.textContent = tekst;
-  b.addEventListener("click", async () => {
-    b.disabled = true;
-    try {
-      await updateDoc(doc(db, "medlemmer", uid), { status: nyStatus });
-      await tegnMedlem(auth.currentUser);
-    } catch (err) {
-      melding("meldingMedlem", feiltekst(err), "feil");
-      b.disabled = false;
-    }
-  });
-  return b;
-}
 
 async function tegnMedlem(bruker) {
   const snap = await getDoc(doc(db, "medlemmer", bruker.uid));
   if (!snap.exists()) { vis("visFullfor"); return; }
   const meg = snap.data();
-  const admin = meg.rolle === "admin";
 
   vis("visMedlem");
+  menyTilgjengelig(true);
+  if ($("panelProfil").hidden && $("panelMedlemmer").hidden && $("panelKlasse").hidden) apnePanel("profil");
   $("hilsen").textContent = "Hei, " + meg.navn.split(" ")[0];
   $("minInfo").textContent = penMobil(meg.mobil) + " · " + meg.epost;
-  $("medlemsliste").hidden = meg.status !== "aktiv";
-  $("adminpanel").hidden = !admin;
 
   if (meg.status !== "aktiv") return;
 
@@ -561,33 +576,24 @@ async function tegnMedlem(bruker) {
   }
   treff.forEach(d => alle.push({ id: d.id, ...d.data() }));
 
-  const tegnListe = (elId, filter, tomtekst) => {
-    const boks = $(elId);
-    boks.textContent = "";
-    const utvalg = alle.filter(filter);
-    if (!utvalg.length) {
-      const p = document.createElement("p");
-      p.className = "hjelp";
-      p.textContent = tomtekst;
-      boks.append(p);
-      return;
-    }
-    utvalg.forEach(m => boks.append(kort(m, admin)));
-  };
-
-  tegnListe("listeAktive", m => m.status === "aktiv", "Ingen aktive medlemmer ennå.");
-  const antall = alle.filter(m => m.status === "aktiv").length;
-  $("tittelMedlemmer").innerHTML = "Medlemmer <span class=\"antall\">(" + antall + ")</span>";
-  if (admin) {
-    tegnListe("listeSluttet", m => m.status === "sluttet", "Ingen registrert som sluttet.");
+  const boks = $("listeAktive");
+  boks.textContent = "";
+  if (!alle.length) {
+    const p = document.createElement("p");
+    p.className = "hjelp";
+    p.textContent = "Ingen medlemmer registrert ennå.";
+    boks.append(p);
+  } else {
+    alle.forEach(m => boks.append(kort(m)));
   }
+  $("tittelMedlemmer").innerHTML = "Medlemmer <span class=\"antall\">(" + alle.length + ")</span>";
 }
 
 /* ---------- Ruting ---------- */
 onAuthStateChanged(auth, async (bruker) => {
   if (registrerer) return;
-  if (!bruker) { vis("visGjest"); return; }
-  if (!bruker.emailVerified) { visUbekreftet(bruker); return; }
+  if (!bruker) { menyTilgjengelig(false); apnePanel("profil"); vis("visGjest"); return; }
+  if (!bruker.emailVerified) { menyTilgjengelig(false); visUbekreftet(bruker); return; }
   try {
     await tegnMedlem(bruker);
   } catch (err) {
