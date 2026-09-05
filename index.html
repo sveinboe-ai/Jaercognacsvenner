@@ -356,7 +356,7 @@ $("skjemaReg").addEventListener("submit", async (e) => {
     try { await sendEmailVerification(cred.user); } catch (_) {}
     registrerer = false;
     melding("meldingReg", "", "");
-    visUbekreftet(cred.user);
+    visUbekreftet(cred.user, "Registreringen er lagret. Ett steg gjenstår.", "ok");
   } catch (err) {
     registrerer = false;
     if (auth.currentUser) {
@@ -415,9 +415,9 @@ $("knappNyttPassord").addEventListener("click", async () => {
 $("knappUt").addEventListener("click", () => signOut(auth));
 $("knappUtUbekreftet").addEventListener("click", () => signOut(auth));
 
-function visUbekreftet(bruker) {
+function visUbekreftet(bruker, tekst, type) {
   $("ubekreftetEpost").textContent = bruker.email;
-  melding("meldingUbekreftet", "");
+  melding("meldingUbekreftet", tekst || "", type);
   vis("visUbekreftet");
 }
 
@@ -428,7 +428,10 @@ $("knappSjekkIgjen").addEventListener("click", async (e) => {
   try {
     await auth.currentUser.reload();
     if (auth.currentUser.emailVerified) {
+      // Uten dette sier det gamle beviset fortsatt at adressen er ubekreftet.
+      await auth.currentUser.getIdToken(true);
       await tegnMedlem(auth.currentUser);
+      melding("meldingMedlem", "E-postadressen er bekreftet. Du er nå registrert som medlem i Jærcognacens venner.", "ok");
     } else {
       melding("meldingUbekreftet", "Adressen er ikke bekreftet ennå. Åpne e-posten og klikk på lenken.", "feil");
     }
@@ -544,7 +547,19 @@ async function tegnMedlem(bruker) {
 
   const alle = [];
   const q = query(collection(db, "medlemmer"), orderBy("navn"));
-  (await getDocs(q)).forEach(d => alle.push({ id: d.id, ...d.data() }));
+  let treff;
+  try {
+    treff = await getDocs(q);
+  } catch (err) {
+    if (err && err.code === "permission-denied" && auth.currentUser) {
+      // Beviset kan være utstedt før adressen ble bekreftet. Hent et ferskt og prøv igjen.
+      await auth.currentUser.getIdToken(true);
+      treff = await getDocs(q);
+    } else {
+      throw err;
+    }
+  }
+  treff.forEach(d => alle.push({ id: d.id, ...d.data() }));
 
   const tegnListe = (elId, filter, tomtekst) => {
     const boks = $(elId);
