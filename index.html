@@ -50,9 +50,10 @@
   .undertittel{margin:0;color:var(--skifer-myk);max-width:30rem}
   .forsidebilde{
     display:block;margin:1.5rem auto .5rem;
-    width:auto;max-width:100%;max-height:20rem;
+    width:auto;max-width:100%;max-height:13rem;
     height:auto;border-radius:2px;
   }
+  img.forsidebilde{max-height:20rem}
   .meny{
     margin:1.25rem 0 0;padding:0;
     display:flex;flex-wrap:wrap;gap:.4rem .5rem;
@@ -157,7 +158,24 @@
     <h1>Jærcognacens venner</h1>
     <p class="undertittel">Medlemsregisteret for venner av cognac på Jæren. Registrer deg her, så er du med med en gang.</p>
 
-    <img class="forsidebilde" src="forside.jpg" width="640" height="960" alt="Flaske Jær Cognac med et fylt smaksglass ved siden av">
+    <svg class="forsidebilde" viewBox="0 0 640 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustrasjon av et cognacglass">
+      <defs>
+        <linearGradient id="veske" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#C98A3C"/>
+          <stop offset="100%" stop-color="#8A4E11"/>
+        </linearGradient>
+      </defs>
+      <g fill="none" stroke="#5A6058" stroke-width="1.4" stroke-linecap="round">
+        <path d="M260,42 L260,74 A60,60 0 0 0 380,74 L380,42"/>
+        <ellipse cx="320" cy="42" rx="60" ry="11"/>
+        <path d="M320,134 L320,170"/>
+        <ellipse cx="320" cy="172" rx="36" ry="8"/>
+        <path d="M150,150 L246,150" stroke="#D2CFC3"/>
+        <path d="M394,150 L490,150" stroke="#D2CFC3"/>
+      </g>
+      <path d="M375,96 A60,60 0 0 1 265,96 Z" fill="url(#veske)" opacity="0.92"/>
+      <ellipse cx="320" cy="96" rx="55" ry="8" fill="#C98A3C" opacity="0.55"/>
+    </svg>
     <nav class="meny" id="meny" aria-label="Seksjoner">
       <button class="menyvalg" type="button" data-panel="profil" hidden>Min profil</button>
       <button class="menyvalg" type="button" data-panel="medlemmer" hidden>Medlemmer</button>
