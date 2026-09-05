@@ -10,7 +10,7 @@
 <style>
   :root{
     /* Fargene er cognacens egen aldersskala, fra ung til gammel */
-    --papir:#FFFFFF;
+    --papir:#F9F4ED;
     --blekk:#2A1E12;
     --dempet:#6B6259;
     --linje:#E2DBD1;
@@ -133,6 +133,7 @@
   .kontakt a{color:var(--dempet);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .kontakt a:hover{color:var(--kobber)}
   .kontakt .mobil{font-variant-numeric:tabular-nums}
+  .klubb{margin:.2rem 0 0;font-size:.85rem;color:var(--kobber)}
   .antall{font-family:Karla,sans-serif;font-size:.9rem;color:var(--dempet)}
 
   .bunn{margin-top:3.5rem;padding-top:1.25rem;border-top:1px solid var(--linje);
@@ -235,6 +236,11 @@
             <input id="regMobil" name="mobil" type="tel" inputmode="tel" autocomplete="tel" placeholder="400 00 000" required>
           </div>
           <div class="felt">
+            <label for="regKlubb">Klubbtilhørighet</label>
+            <input id="regKlubb" name="klubb" autocomplete="organization">
+            <p class="hjelp">Valgfritt. Er du med i en annen cognacklubb, skriv den her.</p>
+          </div>
+          <div class="felt">
             <label for="regEpost">E-post</label>
             <input id="regEpost" name="epost" type="email" autocomplete="email" required>
           </div>
@@ -292,6 +298,11 @@
           <label for="fMobil">Mobil</label>
           <input id="fMobil" type="tel" inputmode="tel" autocomplete="tel" required>
         </div>
+        <div class="felt">
+          <label for="fKlubb">Klubbtilhørighet</label>
+          <input id="fKlubb" autocomplete="organization">
+          <p class="hjelp">Valgfritt.</p>
+        </div>
         <button class="knapp" type="submit">Lagre profil</button>
       </form>
     </section>
@@ -305,6 +316,7 @@
           <span class="mobil hjelp" id="minInfo"></span>
           <span class="hjelp" id="minEpost"></span>
         </div>
+        <p class="klubb" id="minKlubb" hidden></p>
 
         <p class="velkomst">Hei, kjære jærcognacsvenn. Vi vil at du skal være med og bidra til at alle som er interessert i cognac kan dele sine opplevelser og smaksprøver, og komme med anbefalinger på merker eller andre ting. Målet vårt er å samle inn flere smaksseanser som nettopp du gjør eller har vært med på, slik at vi får en god oversikt over hvor cognacen står hos Jærcognacens venner.</p>
 
@@ -426,9 +438,10 @@ function byttFane(medlem) {
 }
 
 /* ---------- Lagre profil ---------- */
-async function lagreProfil(uid, { navn, mobil, epost }) {
+async function lagreProfil(uid, { navn, mobil, epost, klubb }) {
   await setDoc(doc(db, "medlemmer", uid), {
     navn, mobil, epost,
+    klubb: klubb || "",
     status: "aktiv",
     rolle: "medlem",
     innmeldt: serverTimestamp()
@@ -441,6 +454,7 @@ $("skjemaReg").addEventListener("submit", async (e) => {
   const knapp = e.target.querySelector("button");
   const navn = $("regNavn").value.trim();
   const mobil = reisMobil($("regMobil").value);
+  const klubb = $("regKlubb").value.trim();
   const epost = $("regEpost").value.trim();
   const passord = $("regPassord").value;
 
@@ -453,7 +467,7 @@ $("skjemaReg").addEventListener("submit", async (e) => {
   melding("meldingReg", "Registrerer …");
   try {
     const cred = await createUserWithEmailAndPassword(auth, epost, passord);
-    await lagreProfil(cred.user.uid, { navn, mobil, epost });
+    await lagreProfil(cred.user.uid, { navn, mobil, epost, klubb });
     try { await sendEmailVerification(cred.user); } catch (_) {}
     registrerer = false;
     melding("meldingReg", "", "");
@@ -464,6 +478,7 @@ $("skjemaReg").addEventListener("submit", async (e) => {
       // Kontoen ble opprettet, men profilen ble ikke lagret.
       $("fNavn").value = navn;
       $("fMobil").value = mobil;
+      $("fKlubb").value = klubb;
       vis("visFullfor");
       melding("meldingFullfor", feiltekst(err), "feil");
     } else {
@@ -481,10 +496,11 @@ $("skjemaFullfor").addEventListener("submit", async (e) => {
   if (!bruker) return;
   const navn = $("fNavn").value.trim();
   const mobil = reisMobil($("fMobil").value);
+  const klubb = $("fKlubb").value.trim();
   if (navn.length < 2) return melding("meldingFullfor", "Skriv inn fullt navn.", "feil");
   if (!gyldigMobil(mobil)) return melding("meldingFullfor", "Mobilnummeret må være 8 siffer.", "feil");
   try {
-    await lagreProfil(bruker.uid, { navn, mobil, epost: bruker.email });
+    await lagreProfil(bruker.uid, { navn, mobil, epost: bruker.email, klubb });
     await tegnMedlem(bruker);
   } catch (err) {
     melding("meldingFullfor", feiltekst(err), "feil");
@@ -598,6 +614,13 @@ function kort(m) {
   }
   info.append(kontakt);
 
+  if (m.klubb) {
+    const klubb = document.createElement("div");
+    klubb.className = "klubb";
+    klubb.textContent = m.klubb;
+    info.append(klubb);
+  }
+
   rad.append(merke, info);
   return rad;
 }
@@ -614,6 +637,8 @@ async function tegnMedlem(bruker) {
   $("hilsen").textContent = "Hei, " + meg.navn.split(" ")[0];
   $("minInfo").textContent = penMobil(meg.mobil);
   $("minEpost").textContent = meg.epost;
+  $("minKlubb").textContent = meg.klubb || "";
+  $("minKlubb").hidden = !meg.klubb;
 
   if (meg.status !== "aktiv") return;
 
