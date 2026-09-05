@@ -6,184 +6,207 @@
 <title>Jærcognacens venner</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&family=Karla:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --sand:#FFFFFF;
-    --papir:#F2F1EA;
-    --skifer:#262A25;
-    --skifer-myk:#5A6058;
-    --fat:#9C5E17;
-    --fat-lys:#C98A3C;
-    --linje:#D2CFC3;
-    --feil:#8C2F1E;
-    --ok:#3B6B4A;
-    --maks:34rem;
+    /* Fargene er cognacens egen aldersskala, fra ung til gammel */
+    --papir:#FFFFFF;
+    --blekk:#2A1E12;
+    --dempet:#6B6259;
+    --linje:#E2DBD1;
+    --vs:#E3A63B;
+    --vsop:#C07617;
+    --xo:#7A3B12;
+    --blending:#9A5A22;
+    --cocktail:#B8452B;
+    --kobber:#A45E17;
+    --mahogny:#5E2C0D;
+    --varsel:#8C2F1E;
+    --gronn:#3B6B4A;
   }
   *{box-sizing:border-box}
   html{-webkit-text-size-adjust:100%}
   body{
-    margin:0;
-    background:var(--sand);
-    color:var(--skifer);
-    font-family:"IBM Plex Sans",system-ui,sans-serif;
-    font-size:16px;
-    line-height:1.55;
+    margin:0;background:var(--papir);color:var(--blekk);
+    font-family:Karla,system-ui,sans-serif;font-size:17px;line-height:1.6;
   }
-  .ramme{max-width:var(--maks);margin:0 auto;padding:2rem 1.25rem 4rem}
 
-  /* Topp */
-  .topp{padding-bottom:1.5rem;border-bottom:1px solid var(--linje);margin-bottom:2rem}
-  .merke{
-    display:block;width:100%;height:6px;
-    background:linear-gradient(90deg,var(--fat) 0%,var(--fat-lys) 45%,var(--sand) 100%);
-    margin-bottom:1.25rem;
+  /* Ryggraden: fargeskalaen løper loddrett langs hele siden */
+  .ramme{
+    position:relative;max-width:37rem;margin:0 auto;
+    padding:2.5rem 1.25rem 4rem 1.6rem;
   }
+  .ramme::before{
+    content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+    background:linear-gradient(180deg,var(--vs) 0%,var(--vsop) 35%,var(--blending) 60%,var(--xo) 100%);
+  }
+
   h1{
-    font-family:Fraunces,Georgia,serif;
-    font-weight:600;
-    font-size:clamp(2rem,9vw,2.75rem);
-    line-height:1.05;
-    letter-spacing:-.015em;
-    margin:0 0 .5rem;
+    font-family:"Bodoni Moda",Didot,Georgia,serif;font-weight:400;
+    font-size:clamp(2.5rem,11vw,3.4rem);line-height:1.02;
+    letter-spacing:-.01em;margin:0 0 .6rem;
   }
-  .undertittel{margin:0;color:var(--skifer-myk);max-width:30rem}
-  .forsidebilde{
-    display:block;margin:1.5rem auto .5rem;
-    width:auto;max-width:100%;max-height:13rem;
-    height:auto;border-radius:2px;
-  }
-  img.forsidebilde{max-height:20rem}
-  .meny{
-    margin:1.25rem 0 0;padding:0;
-    display:flex;flex-wrap:wrap;gap:.4rem .5rem;
-  }
-  .menyvalg{
-    font:inherit;font-size:.82rem;line-height:1.4;
-    padding:.2rem .6rem;cursor:pointer;
-    background:none;color:var(--skifer-myk);
-    border:1px solid var(--linje);border-radius:2px;
-  }
-  .menyvalg:hover:not([disabled]){color:var(--skifer);border-color:var(--skifer-myk)}
-  .menyvalg[disabled]{cursor:default;opacity:.75}
-  .menyvalg[aria-current="true"]{
-    color:var(--papir);background:var(--skifer);border-color:var(--skifer);
-  }
-  .menyvalg:focus-visible{outline:2px solid var(--fat);outline-offset:2px}
-
-  .boks{
-    border:1px solid var(--linje);border-radius:2px;
-    padding:1.1rem 1.15rem;margin-bottom:1.25rem;
-  }
-  .boks > h2, .boks > h3{margin-top:0}
-  .velkomst{
-    margin:1.25rem 0;padding-top:1.1rem;
-    border-top:1px solid var(--linje);
-    max-width:32rem;
-  }
-
-  h2{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:1.35rem;margin:0 0 .35rem}
-  h3{font-size:1rem;font-weight:600;margin:2rem 0 .5rem}
+  .undertittel{margin:0;color:var(--dempet);max-width:26rem}
+  h2{font-family:"Bodoni Moda",Didot,Georgia,serif;font-weight:400;font-size:1.6rem;line-height:1.2;margin:0 0 .4rem}
+  h3{font-family:"Bodoni Moda",Didot,Georgia,serif;font-weight:400;font-size:1.3rem;margin:0 0 .6rem}
   p{margin:0 0 1rem}
-  .hjelp{font-size:.85rem;color:var(--skifer-myk)}
+  .hjelp{font-size:.92rem;color:var(--dempet)}
+  a{color:var(--kobber)}
+
+  /* Glassene: hero og meny i ett */
+  .meny{margin:2rem 0 2.25rem}
+  .glassrad{display:flex;gap:.35rem;flex-wrap:wrap}
+  .menytekst{display:flex;gap:1.25rem;margin-bottom:1.25rem}
+  .menyvalg{font:inherit;background:none;border:0;padding:0;cursor:pointer;color:var(--dempet)}
+  .menyvalg:focus-visible{outline:2px solid var(--kobber);outline-offset:3px}
+
+  .glass{
+    flex:1 1 3.6rem;display:flex;flex-direction:column;align-items:center;gap:.3rem;
+    padding:.5rem .2rem .45rem;border-bottom:2px solid transparent;
+  }
+  .glass svg{width:26px;height:34px;display:block}
+  .glass .navnelapp{font-size:.72rem;letter-spacing:.03em;color:var(--dempet)}
+  .glass[disabled]{cursor:default}
+  .glass:not([disabled]):hover .navnelapp{color:var(--blekk)}
+  .glass[aria-current="true"]{border-bottom-color:var(--niva)}
+  .glass[aria-current="true"] .navnelapp{color:var(--blekk)}
+  .strek{stroke:var(--dempet);stroke-width:1.1;fill:none;stroke-linecap:round}
+  .veske{fill:var(--niva);transform-origin:50% 55%;animation:fyll .7s cubic-bezier(.2,.7,.3,1) both;animation-delay:var(--vent,0s)}
+  @keyframes fyll{from{transform:scaleY(0);opacity:0}to{transform:scaleY(1);opacity:1}}
+
+  .tekstvalg{padding-bottom:.2rem;border-bottom:2px solid transparent}
+  .tekstvalg[aria-current="true"]{color:var(--blekk);border-bottom-color:var(--kobber)}
 
   /* Faner */
-  .faner{display:flex;gap:1.25rem;border-bottom:1px solid var(--linje);margin-bottom:1.5rem}
-  .fane{
-    background:none;border:0;padding:.5rem 0 .65rem;margin-bottom:-1px;
-    font:inherit;color:var(--skifer-myk);cursor:pointer;border-bottom:2px solid transparent;
-  }
-  .fane[aria-selected="true"]{color:var(--skifer);border-bottom-color:var(--fat)}
-  .fane:focus-visible{outline:2px solid var(--fat);outline-offset:3px}
+  .faner{display:flex;gap:1.5rem;border-bottom:1px solid var(--linje);margin-bottom:1.75rem}
+  .fane{background:none;border:0;padding:.4rem 0 .7rem;margin-bottom:-1px;font:inherit;
+    color:var(--dempet);cursor:pointer;border-bottom:2px solid transparent}
+  .fane[aria-selected="true"]{color:var(--blekk);border-bottom-color:var(--kobber)}
+  .fane:focus-visible{outline:2px solid var(--kobber);outline-offset:3px}
 
-  /* Skjema */
-  form{margin:0}
-  .felt{margin-bottom:1rem}
-  label{display:block;font-size:.9rem;font-weight:500;margin-bottom:.3rem}
+  /* Skjema: understreker, ikke bokser */
+  .felt{margin-bottom:1.4rem}
+  label{display:block;font-size:.82rem;letter-spacing:.02em;color:var(--dempet);margin-bottom:.15rem}
   input{
-    width:100%;padding:.7rem .75rem;font:inherit;color:var(--skifer);
-    background:#FFFFFF;border:1px solid var(--linje);border-radius:2px;
+    width:100%;padding:.45rem 0;font:inherit;color:var(--blekk);
+    background:none;border:0;border-bottom:1px solid var(--linje);border-radius:0;
   }
-  input:focus{outline:2px solid var(--fat);outline-offset:1px;border-color:var(--fat)}
-  input[aria-invalid="true"]{border-color:var(--feil)}
-  .rad{display:flex;gap:.75rem}
-  .rad .felt{flex:1}
+  input:focus{outline:none;border-bottom-color:var(--kobber);box-shadow:0 1px 0 var(--kobber)}
+  .felt .hjelp{margin:.3rem 0 0;font-size:.82rem}
+
   .knapp{
-    display:inline-block;width:100%;padding:.8rem 1rem;
-    font:inherit;font-weight:600;color:var(--papir);background:var(--skifer);
-    border:1px solid var(--skifer);border-radius:2px;cursor:pointer;
+    font:inherit;font-weight:600;cursor:pointer;
+    padding:.8rem 1.4rem;border:1px solid var(--mahogny);
+    background:var(--mahogny);color:#fff;border-radius:1px;
   }
-  .knapp:hover{background:#1C1F1B}
-  .knapp:focus-visible{outline:2px solid var(--fat);outline-offset:2px}
-  .knapp[disabled]{opacity:.5;cursor:progress}
-  .knapp.liten{width:auto;padding:.4rem .7rem;font-size:.85rem;font-weight:500}
-  .knapp.stille{background:none;color:var(--skifer);border-color:var(--linje)}
-  .knapp.stille:hover{background:var(--papir)}
-  .lenkeknapp{background:none;border:0;padding:0;font:inherit;color:var(--fat);text-decoration:underline;cursor:pointer}
+  .knapp:hover{background:#4A2109;border-color:#4A2109}
+  .knapp:focus-visible{outline:2px solid var(--kobber);outline-offset:2px}
+  .knapp[disabled]{opacity:.55;cursor:progress}
+  .knapp.stille{background:none;color:var(--blekk);border-color:var(--linje);font-weight:500}
+  .knapp.stille:hover{background:none;border-color:var(--dempet)}
+  .knapp.liten{padding:.45rem .85rem;font-size:.88rem}
+  .lenkeknapp{background:none;border:0;padding:0;font:inherit;color:var(--kobber);
+    text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 
   /* Meldinger */
-  .melding{padding:.75rem .9rem;border-left:3px solid var(--linje);background:var(--papir);margin-bottom:1.25rem;font-size:.92rem}
-  .melding.feil{border-left-color:var(--feil)}
-  .melding.ok{border-left-color:var(--ok)}
+  .melding{padding:.7rem 0 .7rem .9rem;border-left:2px solid var(--linje);
+    margin-bottom:1.5rem;font-size:.95rem}
+  .melding.feil{border-left-color:var(--varsel)}
+  .melding.ok{border-left-color:var(--gronn)}
   [hidden]{display:none !important}
 
-  /* Medlemmer */
-  .medlem{
-    display:flex;align-items:flex-start;gap:.8rem;flex-wrap:wrap;
-    padding:.9rem 0;border-bottom:1px solid var(--linje);
-  }
-  .init{
-    flex-shrink:0;width:2.5rem;height:2.5rem;
-    display:flex;align-items:center;justify-content:center;
-    border:1px solid var(--linje);border-radius:2px;
-    font-size:.8rem;font-weight:600;color:var(--fat);
-  }
-  .medlem .info{flex:1 1 12rem;min-width:0}
-  .medlem .navn{font-weight:500;line-height:1.3}
-  .kontakt{display:flex;flex-direction:column;margin-top:.15rem;font-size:.9rem}
-  .kontakt a{color:var(--skifer-myk);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .kontakt a:hover{color:var(--fat);text-decoration:underline}
-  .kontakt .mobil{font-variant-numeric:tabular-nums;letter-spacing:.02em}
-  .medlem .handling{display:flex;align-items:center;gap:.4rem;flex-shrink:0;margin-left:auto}
-  .antall{font-weight:400;color:var(--skifer-myk)}
+  .boks{margin-bottom:2.5rem}
+  .velkomst{margin:1.5rem 0 1.75rem;padding-top:1.4rem;border-top:1px solid var(--linje);max-width:32rem}
 
-  .bunn{margin-top:3rem;padding-top:1.25rem;border-top:1px solid var(--linje);font-size:.85rem;color:var(--skifer-myk)}
+  /* Medlemmer */
+  .medlem{display:flex;align-items:center;gap:.9rem;padding:.85rem 0;border-bottom:1px solid var(--linje)}
+  .medlem:last-child{border-bottom:0}
+  .init{
+    flex-shrink:0;width:2.6rem;height:2.6rem;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--kobber);color:var(--kobber);
+    font-size:.78rem;letter-spacing:.03em;
+  }
+  .medlem .info{min-width:0}
+  .medlem .navn{font-weight:500;line-height:1.35}
+  .kontakt{display:flex;flex-direction:column;font-size:.88rem}
+  .kontakt a{color:var(--dempet);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .kontakt a:hover{color:var(--kobber)}
+  .kontakt .mobil{font-variant-numeric:tabular-nums}
+  .antall{font-family:Karla,sans-serif;font-size:.9rem;color:var(--dempet)}
+
+  .bunn{margin-top:3.5rem;padding-top:1.25rem;border-top:1px solid var(--linje);
+    font-size:.85rem;color:var(--dempet);max-width:30rem}
+
+  @media (prefers-reduced-motion:reduce){
+    .veske{animation:none}
+  }
 </style>
 </head>
 <body>
 <div class="ramme">
 
-  <header class="topp">
-    <span class="merke" aria-hidden="true"></span>
+  <header>
     <h1>Jærcognacens venner</h1>
-    <p class="undertittel">Medlemsregisteret for venner av cognac på Jæren. Registrer deg her, så er du med med en gang.</p>
+    <p class="undertittel">Vi deler smaksprøver, opplevelser og anbefalinger. Registrer deg, så er du med med en gang.</p>
 
-    <svg class="forsidebilde" viewBox="0 0 640 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustrasjon av et cognacglass">
-      <defs>
-        <linearGradient id="veske" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#C98A3C"/>
-          <stop offset="100%" stop-color="#8A4E11"/>
-        </linearGradient>
-      </defs>
-      <g fill="none" stroke="#5A6058" stroke-width="1.4" stroke-linecap="round">
-        <path d="M260,42 L260,74 A60,60 0 0 0 380,74 L380,42"/>
-        <ellipse cx="320" cy="42" rx="60" ry="11"/>
-        <path d="M320,134 L320,170"/>
-        <ellipse cx="320" cy="172" rx="36" ry="8"/>
-        <path d="M150,150 L246,150" stroke="#D2CFC3"/>
-        <path d="M394,150 L490,150" stroke="#D2CFC3"/>
-      </g>
-      <path d="M375,96 A60,60 0 0 1 265,96 Z" fill="url(#veske)" opacity="0.92"/>
-      <ellipse cx="320" cy="96" rx="55" ry="8" fill="#C98A3C" opacity="0.55"/>
-    </svg>
     <nav class="meny" id="meny" aria-label="Seksjoner">
-      <button class="menyvalg" type="button" data-panel="profil" hidden>Min profil</button>
-      <button class="menyvalg" type="button" data-panel="medlemmer" hidden>Medlemmer</button>
-      <button class="menyvalg" type="button" data-panel="VS" disabled>VS</button>
-      <button class="menyvalg" type="button" data-panel="VSOP" disabled>VSOP</button>
-      <button class="menyvalg" type="button" data-panel="XO" disabled>XO</button>
-      <button class="menyvalg" type="button" data-panel="Blending" disabled>Blending</button>
-      <button class="menyvalg" type="button" data-panel="Cocktail" disabled>Cocktail</button>
+      <div class="menytekst">
+        <button class="menyvalg tekstvalg" type="button" data-panel="profil" hidden>Min profil</button>
+        <button class="menyvalg tekstvalg" type="button" data-panel="medlemmer" hidden>Medlemmer</button>
+      </div>
+      <div class="glassrad">
+        <button class="menyvalg glass" type="button" data-panel="VS" disabled style="--niva:var(--vs);--vent:0.0s">
+          <svg viewBox="0 0 24 34" aria-hidden="true">
+            <path class="veske" d="M5.2,10.5 A6.8,6.8 0 0 0 18.8,10.5 Z"/>
+            <path class="strek" d="M4.6,3.6 L4.6,10 A7.4,7.4 0 0 0 19.4,10 L19.4,3.6"/>
+            <path class="strek" d="M3.8,3.6 L20.2,3.6"/>
+            <path class="strek" d="M12,17.4 L12,26.4"/>
+            <path class="strek" d="M7.6,26.8 L16.4,26.8"/>
+          </svg>
+          <span class="navnelapp">VS</span>
+        </button>
+        <button class="menyvalg glass" type="button" data-panel="VSOP" disabled style="--niva:var(--vsop);--vent:0.08s">
+          <svg viewBox="0 0 24 34" aria-hidden="true">
+            <path class="veske" d="M5.2,10.5 A6.8,6.8 0 0 0 18.8,10.5 Z"/>
+            <path class="strek" d="M4.6,3.6 L4.6,10 A7.4,7.4 0 0 0 19.4,10 L19.4,3.6"/>
+            <path class="strek" d="M3.8,3.6 L20.2,3.6"/>
+            <path class="strek" d="M12,17.4 L12,26.4"/>
+            <path class="strek" d="M7.6,26.8 L16.4,26.8"/>
+          </svg>
+          <span class="navnelapp">VSOP</span>
+        </button>
+        <button class="menyvalg glass" type="button" data-panel="XO" disabled style="--niva:var(--xo);--vent:0.16s">
+          <svg viewBox="0 0 24 34" aria-hidden="true">
+            <path class="veske" d="M5.2,10.5 A6.8,6.8 0 0 0 18.8,10.5 Z"/>
+            <path class="strek" d="M4.6,3.6 L4.6,10 A7.4,7.4 0 0 0 19.4,10 L19.4,3.6"/>
+            <path class="strek" d="M3.8,3.6 L20.2,3.6"/>
+            <path class="strek" d="M12,17.4 L12,26.4"/>
+            <path class="strek" d="M7.6,26.8 L16.4,26.8"/>
+          </svg>
+          <span class="navnelapp">XO</span>
+        </button>
+        <button class="menyvalg glass" type="button" data-panel="Blending" disabled style="--niva:var(--blending);--vent:0.24s">
+          <svg viewBox="0 0 24 34" aria-hidden="true">
+            <path class="veske" d="M5.2,10.5 A6.8,6.8 0 0 0 18.8,10.5 Z"/>
+            <path class="strek" d="M4.6,3.6 L4.6,10 A7.4,7.4 0 0 0 19.4,10 L19.4,3.6"/>
+            <path class="strek" d="M3.8,3.6 L20.2,3.6"/>
+            <path class="strek" d="M12,17.4 L12,26.4"/>
+            <path class="strek" d="M7.6,26.8 L16.4,26.8"/>
+          </svg>
+          <span class="navnelapp">Blending</span>
+        </button>
+        <button class="menyvalg glass" type="button" data-panel="Cocktail" disabled style="--niva:var(--cocktail);--vent:0.32s">
+          <svg viewBox="0 0 24 34" aria-hidden="true">
+            <path class="veske" d="M5.2,10.5 A6.8,6.8 0 0 0 18.8,10.5 Z"/>
+            <path class="strek" d="M4.6,3.6 L4.6,10 A7.4,7.4 0 0 0 19.4,10 L19.4,3.6"/>
+            <path class="strek" d="M3.8,3.6 L20.2,3.6"/>
+            <path class="strek" d="M12,17.4 L12,26.4"/>
+            <path class="strek" d="M7.6,26.8 L16.4,26.8"/>
+          </svg>
+          <span class="navnelapp">Cocktail</span>
+        </button>
+      </div>
     </nav>
   </header>
 
@@ -192,7 +215,6 @@
   </div>
 
   <main>
-    <!-- Innlogging / registrering -->
     <section id="visGjest" hidden>
       <div class="faner" role="tablist">
         <button class="fane" id="faneMedlem" role="tab" aria-selected="true" aria-controls="panelMedlem">Bli medlem</button>
@@ -201,7 +223,7 @@
 
       <div id="panelMedlem" role="tabpanel" aria-labelledby="faneMedlem">
         <h2>Bli medlem</h2>
-        <p class="hjelp">Vi bruker navn, e-post og mobilnummer til medlemslista og til innkalling til samlinger. Ingenting deles utenfor foreningen.</p>
+        <p class="hjelp">Navn, mobil og e-post brukes til medlemslista og til innkalling til samlinger. Ingenting deles utenfor foreningen.</p>
         <div id="meldingReg" class="melding" hidden></div>
         <form id="skjemaReg" novalidate>
           <div class="felt">
@@ -239,26 +261,24 @@
           </div>
           <button class="knapp" type="submit">Logg inn</button>
         </form>
-        <p class="hjelp" style="margin-top:1rem">
+        <p class="hjelp" style="margin-top:1.25rem">
           Glemt passordet? <button class="lenkeknapp" id="knappNyttPassord" type="button">Send meg en lenke</button>
         </p>
       </div>
     </section>
 
-    <!-- Innlogget, men e-posten er ikke bekreftet -->
     <section id="visUbekreftet" hidden>
       <h2>Bekreft e-postadressen</h2>
       <p>Vi har sendt en lenke til <strong id="ubekreftetEpost"></strong>. Klikk på lenken i e-posten, og kom så tilbake hit.</p>
       <p class="hjelp">Finner du den ikke, se i søppelpost. Avsenderen er Jærcognacens venner.</p>
       <div id="meldingUbekreftet" class="melding" hidden></div>
       <button class="knapp" id="knappSjekkIgjen" type="button">Jeg har bekreftet</button>
-      <p style="margin-top:1rem;display:flex;gap:.5rem">
+      <p style="margin-top:1.5rem;display:flex;gap:.5rem;flex-wrap:wrap">
         <button class="knapp stille liten" id="knappSendPaNytt" type="button">Send lenken på nytt</button>
         <button class="knapp stille liten" id="knappUtUbekreftet" type="button">Logg ut</button>
       </p>
     </section>
 
-    <!-- Innlogget uten profil -->
     <section id="visFullfor" hidden>
       <h2>Fullfør profilen</h2>
       <p class="hjelp">Registreringen ble avbrutt før profilen var lagret. Fyll ut resten, så er du inne.</p>
@@ -276,13 +296,15 @@
       </form>
     </section>
 
-    <!-- Innlogget -->
     <section id="visMedlem" hidden>
       <div id="meldingMedlem" class="melding" hidden></div>
 
       <div class="boks" id="panelProfil">
         <h2 id="hilsen">Min side</h2>
-        <p class="hjelp" id="minInfo"></p>
+        <div class="kontakt">
+          <span class="mobil hjelp" id="minInfo"></span>
+          <span class="hjelp" id="minEpost"></span>
+        </div>
 
         <p class="velkomst">Hei, kjære jærcognacsvenn. Vi vil at du skal være med og bidra til at alle som er interessert i cognac kan dele sine opplevelser og smaksprøver, og komme med anbefalinger på merker eller andre ting. Målet vårt er å samle inn flere smaksseanser som nettopp du gjør eller har vært med på, slik at vi får en god oversikt over hvor cognacen står hos Jærcognacens venner.</p>
 
@@ -296,7 +318,7 @@
 
       <div class="boks" id="panelKlasse" hidden>
         <h3 id="klasseTittel"></h3>
-        <p class="hjelp" style="margin:0">Poengregistrering er ikke bygget ennå. Denne seksjonen står klar til den kommer.</p>
+        <p class="hjelp" style="margin:0">Her kommer smakingene og poengene for denne klassen. Vi bygger den delen etter hvert.</p>
       </div>
     </section>
   </main>
@@ -307,6 +329,7 @@
 </div>
 
 <script type="module">
+
 import { firebaseConfig } from "./firebase-config.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
@@ -589,7 +612,8 @@ async function tegnMedlem(bruker) {
   menyTilgjengelig(true);
   if ($("panelProfil").hidden && $("panelMedlemmer").hidden && $("panelKlasse").hidden) apnePanel("profil");
   $("hilsen").textContent = "Hei, " + meg.navn.split(" ")[0];
-  $("minInfo").textContent = penMobil(meg.mobil) + " · " + meg.epost;
+  $("minInfo").textContent = penMobil(meg.mobil);
+  $("minEpost").textContent = meg.epost;
 
   if (meg.status !== "aktiv") return;
 
@@ -634,6 +658,7 @@ onAuthStateChanged(auth, async (bruker) => {
     melding("meldingMedlem", feiltekst(err), "feil");
   }
 });
+
 </script>
 </body>
 </html>
