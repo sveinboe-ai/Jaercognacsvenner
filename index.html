@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.3 – 5. september 2026 -->
+     Versjon 1.5 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -169,6 +169,11 @@
   }
   .sortvalg[aria-current="true"]{color:var(--blekk);border-bottom-color:var(--kobber)}
   .sortvalg:focus-visible{outline:2px solid var(--kobber);outline-offset:3px}
+  .plass{
+    flex-shrink:0;width:1.9rem;font-size:.85rem;color:var(--dempet);
+    font-variant-numeric:tabular-nums;
+  }
+  .plass.forst{color:var(--kobber)}
   .rad{display:flex;align-items:baseline;gap:.9rem;padding:.7rem 0;border-bottom:1px solid var(--linje)}
   .rad:last-child{border-bottom:0}
   .rad .venstre{flex:1;min-width:0}
@@ -534,7 +539,7 @@
 
   <footer class="bunn">
     Spørsmål om medlemskap eller registrerte opplysninger rettes til admin. Du kan når som helst be om å bli slettet fra registeret.
-    <span class="versjon">Versjon 1.3</span>
+    <span class="versjon">Versjon 1.5</span>
   </footer>
 </div>
 
@@ -1070,6 +1075,24 @@ function tomtSvar(tekst) {
   return p;
 }
 
+// Delt plass når verdiene er like: 1, 2, 2, 4
+function medPlass(rad, nr) {
+  const merke = document.createElement("div");
+  merke.className = "plass";
+  merke.textContent = nr + ".";
+  rad.insertBefore(merke, rad.firstChild);
+  if (nr === 1) merke.classList.add("forst");
+  return rad;
+}
+
+function plassering(verdier) {
+  const plasser = [];
+  verdier.forEach((v, i) => {
+    plasser.push(i > 0 && v === verdier[i - 1] ? plasser[i - 1] : i + 1);
+  });
+  return plasser;
+}
+
 function radElement(tittel, under, verdi, svakVerdi) {
   const rad = document.createElement("div");
   rad.className = "rad";
@@ -1529,12 +1552,16 @@ function tegnKlasse(klasse) {
     : "De tre beste i klassen, kåret av Jæren Cognac Club.";
   boks.append(innledning);
 
-  rader.forEach(c => {
+  const plasser = plassering(rader.map(c => c.snitt === null || c.snitt === undefined ? -1 : Math.round(c.snitt * 100)));
+
+  rader.forEach((c, i) => {
     const under = c.antall
       ? c.antall + (c.antall === 1 ? " karakter" : " karakterer")
         + (c.ganger ? ", smakt " + c.ganger + (c.ganger === 1 ? " gang" : " ganger") : "")
       : "Ingen karakterer lagt inn";
-    boks.append(radElement(c.navn, under, c.snitt === null || c.snitt === undefined ? "–" : tall(c.snitt)));
+    boks.append(medPlass(
+      radElement(c.navn, under, c.snitt === null || c.snitt === undefined ? "–" : tall(c.snitt)),
+      plasser[i]));
   });
 }
 
@@ -1613,12 +1640,17 @@ function tegnArkiv() {
     ? (b.snitt === null ? -1 : b.snitt) - (a.snitt === null ? -1 : a.snitt)
     : b.sisteDato.localeCompare(a.sisteDato));
 
-  rader.forEach(c => {
+  const arkivPlasser = arkivSortering === "snitt"
+    ? plassering(rader.map(c => c.snitt === null ? -1 : Math.round(c.snitt * 100)))
+    : null;
+
+  rader.forEach((c, i) => {
     const ganger = c.smakinger.length;
     const under = c.klassifisering + " · "
       + (ganger === 1 ? "smakt " + norskDato(c.sisteDato) : "smakt " + ganger + " ganger, sist " + norskDato(c.sisteDato))
       + " · " + c.poeng.length + (c.poeng.length === 1 ? " karakter" : " karakterer");
     const rad = radElement(c.cognac, under, c.snitt === null ? "–" : tall(c.snitt));
+    if (arkivPlasser) medPlass(rad, arkivPlasser[i]);
     rad.classList.add("valgbar");
     rad.addEventListener("click", () => {
       apentArkiv = apentArkiv === c.noekkel ? null : c.noekkel;
