@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.6 – 5. september 2026 -->
+     Versjon 1.7 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -543,7 +543,7 @@
 
   <footer class="bunn">
     Spørsmål om medlemskap eller registrerte opplysninger rettes til admin. Du kan når som helst be om å bli slettet fra registeret.
-    <span class="versjon">Versjon 1.6</span>
+    <span class="versjon">Versjon 1.7</span>
   </footer>
 </div>
 
@@ -1493,7 +1493,7 @@ function tegnRangering() {
   blendingArkiv.forEach(b => {
     Object.keys(b.resultat || {}).forEach(init => {
       const medlem = medlemmer.find(m => (m.initialer || "").toUpperCase() === init);
-      legg(init, medlem ? medlem.navn : arkivNavnFor(init),
+      legg(init, medlem ? medlem.navn + " (" + init + ")" + (arkivTillegg[init] ? " " + arkivTillegg[init] : "") : arkivNavnFor(init),
            arkivRette(b, init),
            GLASS.filter(g => b.resultat[init][g]).length, 1, init);
     });
@@ -1504,7 +1504,10 @@ function tegnRangering() {
     Object.keys(b.svar || {}).forEach(uid => {
       const medlem = medlemmer.find(m => m.id === uid);
       const init = medlem && medlem.initialer ? medlem.initialer.toUpperCase() : null;
-      legg(init || "uid:" + uid, medlem ? medlem.navn : navnPa(uid), rettePoeng(b, uid), 3, 1, init);
+      const vist = medlem
+        ? medlem.navn + (init ? " (" + init + ")" + (arkivTillegg[init] ? " " + arkivTillegg[init] : "") : "")
+        : navnPa(uid);
+      legg(init || "uid:" + uid, vist, rettePoeng(b, uid), 3, 1, init);
     });
   });
 
@@ -1578,6 +1581,7 @@ function tegnKlasse(klasse) {
 let historikk = [];
 let arkivNavn = {};
 let arkivTitler = {};
+let arkivTillegg = {};
 
 async function lastArkiv() {
   historikk = [];
@@ -1595,6 +1599,12 @@ async function lastArkiv() {
     arkivTitler = t.exists() ? t.data() : {};
   } catch (_) {
     arkivTitler = {};
+  }
+  try {
+    const t = await getDoc(doc(db, "arkiv", "tillegg"));
+    arkivTillegg = t.exists() ? t.data() : {};
+  } catch (_) {
+    arkivTillegg = {};
   }
 }
 
@@ -1615,7 +1625,10 @@ function settUtnevnte(rad, init) {
 }
 
 function arkivNavnFor(init) {
-  return arkivNavn[init] ? arkivNavn[init] + " (" + init + ")" : init;
+  const grunn = arkivNavn[init] ? arkivNavn[init] + " (" + init + ")" : init;
+  // Et tillegg rett bak initialene, f.eks. antall år som formann i romertall
+  const tillegg = arkivTillegg[(init || "").toUpperCase()];
+  return tillegg ? grunn + " " + tillegg : grunn;
 }
 
 document.querySelectorAll(".arkivfane").forEach(b => {
@@ -1780,7 +1793,8 @@ async function importer(e, feltId) {
   const rader = Array.isArray(data.smakinger) ? data.smakinger : [];
   const gamleBlendinger = Array.isArray(data.blendinger) ? data.blendinger : [];
   const harTitler = data.titler && typeof data.titler === "object";
-  if (!rader.length && !gamleBlendinger.length && !harTitler) {
+  const harTillegg = data.tillegg && typeof data.tillegg === "object";
+  if (!rader.length && !gamleBlendinger.length && !harTitler && !harTillegg) {
     return melding("meldingArkiv", "Fant verken smakinger eller blendinger i dataene.", "feil");
   }
 
@@ -1792,6 +1806,9 @@ async function importer(e, feltId) {
     }
     if (data.titler && typeof data.titler === "object") {
       await setDoc(doc(db, "arkiv", "titler"), data.titler, { merge: true });
+    }
+    if (data.tillegg && typeof data.tillegg === "object") {
+      await setDoc(doc(db, "arkiv", "tillegg"), data.tillegg, { merge: true });
     }
     for (const r of rader) {
       if (!r.cognac || !r.dato || !r.klassifisering) continue;
@@ -1821,7 +1838,8 @@ async function importer(e, feltId) {
     melding("meldingArkiv", [
       rader.length ? rader.length + " smakinger" : "",
       gamle.length ? gamle.length + " blendinger" : "",
-      harTitler ? Object.keys(data.titler).length + " titler" : ""
+      harTitler ? Object.keys(data.titler).length + " titler" : "",
+      harTillegg ? Object.keys(data.tillegg).length + " tillegg" : ""
     ].filter(Boolean).join(" og ") + " er importert.", "ok");
     tegnArkiv();
   } catch (err) {
