@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.9 – 5. september 2026 -->
+     Versjon 1.10 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -192,15 +192,17 @@
   .valgbar{cursor:pointer}
   .valgbar:hover .tittel{color:var(--kobber)}
   .detalj{margin:1.25rem 0 0;padding:1.1rem 0 0;border-top:2px solid var(--kobber)}
+  /* Utnevnt av klubben: fast ramme */
   .utnevnt{
-    flex-shrink:0;font-size:.7rem;letter-spacing:.05em;white-space:nowrap;
-    padding:.1rem .45rem;border:1px dashed var(--dempet);color:var(--dempet);
-  }
-  .tittelmerke{
     flex-shrink:0;font-size:.7rem;letter-spacing:.05em;white-space:nowrap;
     padding:.1rem .45rem;border:1px solid var(--kobber);color:var(--kobber);
   }
-  .tittelmerke.master{border-color:var(--xo);color:var(--xo);background:rgba(122,59,18,.06)}
+  /* Utregnet av treffprosenten, ikke offisiell: stiplet ramme */
+  .tittelmerke{
+    flex-shrink:0;font-size:.7rem;letter-spacing:.05em;white-space:nowrap;
+    padding:.1rem .45rem;border:1px dashed var(--dempet);color:var(--dempet);
+  }
+  .tittelmerke.master{border-color:var(--xo);color:var(--xo)}
   .jccmerke{
     flex-shrink:0;font-size:.7rem;letter-spacing:.06em;
     padding:.1rem .4rem;border:1px solid var(--xo);color:var(--xo);
@@ -543,7 +545,7 @@
 
   <footer class="bunn">
     Spørsmål om medlemskap eller registrerte opplysninger rettes til admin. Du kan når som helst be om å bli slettet fra registeret.
-    <span class="versjon">Versjon 1.9</span>
+    <span class="versjon">Versjon 1.10</span>
   </footer>
 </div>
 
