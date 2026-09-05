@@ -1,81 +1,1783 @@
-rules_version = '2';
+<!doctype html>
+<!-- Jærcognacens venner – medlemsregister
+     Versjon 1.3 – 5. september 2026 -->
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jærcognacens venner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&family=Karla:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Fargene er cognacens egen aldersskala, fra ung til gammel */
+    --papir:#F9F4ED;
+    --blekk:#2A1E12;
+    --dempet:#6B6259;
+    --linje:#E2DBD1;
+    --vs:#E3A63B;
+    --vsop:#C07617;
+    --xo:#7A3B12;
+    --blending:#9A5A22;
+    --cocktail:#B8452B;
+    --kobber:#A45E17;
+    --mahogny:#5E2C0D;
+    --varsel:#8C2F1E;
+    --gronn:#3B6B4A;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:var(--papir);color:var(--blekk);
+    font-family:Karla,system-ui,sans-serif;font-size:17px;line-height:1.6;
+  }
 
-service cloud.firestore {
-  match /databases/{database}/documents {
+  /* Ryggraden: fargeskalaen løper loddrett langs hele siden */
+  .ramme{
+    position:relative;max-width:37rem;margin:0 auto;
+    padding:2.5rem 1.25rem 4rem 1.6rem;
+  }
+  .ramme::before{
+    content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+    background:linear-gradient(180deg,var(--vs) 0%,var(--vsop) 35%,var(--blending) 60%,var(--xo) 100%);
+  }
 
-    function innlogget() {
-      return request.auth != null;
+  h1{
+    font-family:"Bodoni Moda",Didot,Georgia,serif;font-weight:400;
+    font-size:clamp(2.5rem,11vw,3.4rem);line-height:1.02;
+    letter-spacing:-.01em;margin:0 0 .6rem;
+  }
+  .undertittel{margin:0;color:var(--dempet);max-width:26rem}
+  h2{font-family:"Bodoni Moda",Didot,Georgia,serif;font-weight:400;font-size:1.6rem;line-height:1.2;margin:0 0 .4rem}
+  h3{font-family:"Bodoni Moda",Didot,Georgia,serif;font-weight:400;font-size:1.3rem;margin:0 0 .6rem}
+  p{margin:0 0 1rem}
+  .hjelp{font-size:.92rem;color:var(--dempet)}
+  a{color:var(--kobber)}
+
+  /* Glassene: hero og meny i ett */
+  .meny{margin:2rem 0 2.25rem}
+  .glassrad{display:flex;gap:.35rem;flex-wrap:wrap}
+  .verktoy{
+    display:flex;gap:1.4rem;flex-wrap:wrap;
+    padding-bottom:.85rem;margin-bottom:2rem;
+    border-bottom:1px solid var(--linje);
+  }
+  .menyvalg{font:inherit;background:none;border:0;padding:0;cursor:pointer;color:var(--dempet)}
+  .menyvalg:focus-visible{outline:2px solid var(--kobber);outline-offset:3px}
+
+  .glass{
+    flex:1 1 3.6rem;display:flex;flex-direction:column;align-items:center;gap:.3rem;
+    padding:.5rem .2rem .45rem;border-bottom:2px solid transparent;
+  }
+  .glass svg{width:26px;height:34px;display:block}
+  .glass .navnelapp{font-size:.72rem;letter-spacing:.03em;color:var(--dempet)}
+  .glass[disabled]{cursor:default}
+  .glass:not([disabled]):hover .navnelapp{color:var(--blekk)}
+  .glass[aria-current="true"]{border-bottom-color:var(--niva)}
+  .glass[aria-current="true"] .navnelapp{color:var(--blekk)}
+  .strek{stroke:var(--dempet);stroke-width:1.1;fill:none;stroke-linecap:round}
+  .veske{fill:var(--niva);transform-origin:50% 55%;animation:fyll .7s cubic-bezier(.2,.7,.3,1) both;animation-delay:var(--vent,0s)}
+  @keyframes fyll{from{transform:scaleY(0);opacity:0}to{transform:scaleY(1);opacity:1}}
+
+  .tekstvalg{padding-bottom:.2rem;border-bottom:2px solid transparent}
+  .tekstvalg[aria-current="true"]{color:var(--blekk);border-bottom-color:var(--kobber)}
+
+  /* Faner */
+  .faner{display:flex;gap:1.5rem;border-bottom:1px solid var(--linje);margin-bottom:1.75rem}
+  .fane{background:none;border:0;padding:.4rem 0 .7rem;margin-bottom:-1px;font:inherit;
+    color:var(--dempet);cursor:pointer;border-bottom:2px solid transparent}
+  .fane[aria-selected="true"]{color:var(--blekk);border-bottom-color:var(--kobber)}
+  .fane:focus-visible{outline:2px solid var(--kobber);outline-offset:3px}
+
+  /* Skjema: understreker, ikke bokser */
+  .felt{margin-bottom:1.4rem}
+  label{display:block;font-size:.82rem;letter-spacing:.02em;color:var(--dempet);margin-bottom:.15rem}
+  input{
+    width:100%;padding:.45rem 0;font:inherit;color:var(--blekk);
+    background:none;border:0;border-bottom:1px solid var(--linje);border-radius:0;
+  }
+  input:focus{outline:none;border-bottom-color:var(--kobber);box-shadow:0 1px 0 var(--kobber)}
+  .felt .hjelp{margin:.3rem 0 0;font-size:.82rem}
+
+  .knapp{
+    font:inherit;font-weight:600;cursor:pointer;
+    padding:.8rem 1.4rem;border:1px solid var(--mahogny);
+    background:var(--mahogny);color:#fff;border-radius:1px;
+  }
+  .knapp:hover{background:#4A2109;border-color:#4A2109}
+  .knapp:focus-visible{outline:2px solid var(--kobber);outline-offset:2px}
+  .knapp[disabled]{opacity:.55;cursor:progress}
+  .knapp.stille{background:none;color:var(--blekk);border-color:var(--linje);font-weight:500}
+  .knapp.stille:hover{background:none;border-color:var(--dempet)}
+  .knapp.liten{padding:.45rem .85rem;font-size:.88rem}
+  .lenkeknapp{background:none;border:0;padding:0;font:inherit;color:var(--kobber);
+    text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+
+  /* Meldinger */
+  .melding{padding:.7rem 0 .7rem .9rem;border-left:2px solid var(--linje);
+    margin-bottom:1.5rem;font-size:.95rem}
+  .melding.feil{border-left-color:var(--varsel)}
+  .melding.ok{border-left-color:var(--gronn)}
+  [hidden]{display:none !important}
+
+  .boks{margin-bottom:2.5rem}
+  .velkomst{margin:1.5rem 0 1.75rem;padding-top:1.4rem;border-top:1px solid var(--linje);max-width:32rem}
+
+  /* Medlemmer */
+  .medlem{display:flex;flex-wrap:wrap;align-items:center;gap:.9rem;padding:.85rem 0;border-bottom:1px solid var(--linje)}
+  .medlem:last-child{border-bottom:0}
+  .init{
+    flex-shrink:0;width:2.6rem;height:2.6rem;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--kobber);color:var(--kobber);
+    font-size:.78rem;letter-spacing:.03em;
+  }
+  .medlem .info{min-width:0}
+  .medlem .navn{font-weight:500;line-height:1.35}
+  .kontakt{display:flex;flex-direction:column;font-size:.88rem}
+  .kontakt a{color:var(--dempet);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .kontakt a:hover{color:var(--kobber)}
+  .kontakt .mobil{font-variant-numeric:tabular-nums}
+  select{
+    width:100%;padding:.45rem 0;font:inherit;color:var(--blekk);
+    background:none;border:0;border-bottom:1px solid var(--linje);border-radius:0;
+  }
+  select:focus{outline:none;border-bottom-color:var(--kobber);box-shadow:0 1px 0 var(--kobber)}
+
+  .framgang{
+    margin:0 0 1.75rem;padding:0 0 0 1.2rem;
+    font-size:.92rem;color:var(--dempet);max-width:31rem;
+  }
+  .framgang li{margin-bottom:.45rem;padding-left:.2rem}
+  .framgang li::marker{color:var(--kobber)}
+  textarea{
+    width:100%;padding:.6rem .7rem;font:inherit;font-size:.9rem;color:var(--blekk);
+    background:none;border:1px solid var(--linje);border-radius:1px;resize:vertical;
+  }
+  textarea:focus{outline:none;border-color:var(--kobber)}
+  .sortering{display:flex;gap:1.25rem;margin-top:1.5rem}
+  .arkivfane{
+    font:inherit;font-size:.95rem;background:none;border:0;padding:.2rem 0;
+    color:var(--dempet);cursor:pointer;border-bottom:2px solid transparent;
+  }
+  .arkivfane[aria-current="true"]{color:var(--blekk);border-bottom-color:var(--kobber)}
+  .arkivfane:focus-visible{outline:2px solid var(--kobber);outline-offset:3px}
+  .sortvalg{
+    font:inherit;font-size:.88rem;background:none;border:0;padding:.2rem 0;
+    color:var(--dempet);cursor:pointer;border-bottom:2px solid transparent;
+  }
+  .sortvalg[aria-current="true"]{color:var(--blekk);border-bottom-color:var(--kobber)}
+  .sortvalg:focus-visible{outline:2px solid var(--kobber);outline-offset:3px}
+  .rad{display:flex;align-items:baseline;gap:.9rem;padding:.7rem 0;border-bottom:1px solid var(--linje)}
+  .rad:last-child{border-bottom:0}
+  .rad .venstre{flex:1;min-width:0}
+  .rad .tittel{font-weight:500;line-height:1.35}
+  .rad .under{font-size:.85rem;color:var(--dempet)}
+  .tall{font-variant-numeric:tabular-nums;font-size:1.1rem;white-space:nowrap}
+  .tall.svak{font-size:.9rem;color:var(--dempet)}
+  .glassmerke{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:1.5rem;height:1.5rem;flex-shrink:0;margin-right:.1rem;
+    border:1px solid var(--linje);border-radius:50%;
+    font-size:.75rem;color:var(--dempet);
+  }
+  .rett{color:var(--gronn)}
+  .bom{color:var(--dempet)}
+  .valgbar{cursor:pointer}
+  .valgbar:hover .tittel{color:var(--kobber)}
+  .detalj{margin:1.25rem 0 0;padding:1.1rem 0 0;border-top:2px solid var(--kobber)}
+  .tittelmerke{
+    flex-shrink:0;font-size:.7rem;letter-spacing:.05em;white-space:nowrap;
+    padding:.1rem .45rem;border:1px solid var(--kobber);color:var(--kobber);
+  }
+  .tittelmerke.master{border-color:var(--xo);color:var(--xo);background:rgba(122,59,18,.06)}
+  .jccmerke{
+    flex-shrink:0;font-size:.7rem;letter-spacing:.06em;
+    padding:.1rem .4rem;border:1px solid var(--xo);color:var(--xo);
+  }
+  .klubb{margin:.2rem 0 0;font-size:.85rem;color:var(--kobber)}
+  .antall{font-family:Karla,sans-serif;font-size:.9rem;color:var(--dempet)}
+
+  .versjon{display:block;margin-top:.9rem;font-size:.78rem;color:var(--linje)}
+  .bunn{margin-top:3.5rem;padding-top:1.25rem;border-top:1px solid var(--linje);
+    font-size:.85rem;color:var(--dempet);max-width:30rem}
+
+  /* Brede skjermer: overskrift og meny til venstre, innholdet ved siden av */
+  @media (min-width:62rem){
+    .ramme{
+      max-width:66rem;padding:3.5rem 2rem 5rem 2.5rem;
+      display:grid;grid-template-columns:17rem minmax(0,1fr);
+      column-gap:4rem;align-items:start;
     }
+    header{position:sticky;top:3.5rem}
+    main{min-width:0}
+    .bunn{grid-column:1 / -1;margin-top:4rem}
 
-    function meg() {
-      return get(/databases/$(database)/documents/medlemmer/$(request.auth.uid)).data;
+    h1{font-size:2.7rem}
+    .undertittel{font-size:.95rem}
+    .meny{margin:1.75rem 0 0}
+    .verktoy{grid-column:1 / -1;margin-bottom:2.5rem}
+    .glassrad{gap:.2rem}
+    .glass{flex:0 0 3.1rem}
+
+    /* Løpende tekst holdes lesbar selv om spalten er bred */
+    .undertittel,.velkomst,.framgang,.hjelp,.bunn{max-width:34rem}
+    form{max-width:30rem}
+
+    /* Medlemslista tåler to spalter når det er plass */
+    #listeAktive{display:grid;grid-template-columns:1fr 1fr;column-gap:3rem}
+    #listeAktive .medlem:nth-last-child(2):nth-child(odd){border-bottom:0}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .veske{animation:none}
+  }
+</style>
+</head>
+<body>
+<div class="ramme">
+
+  <nav class="verktoy" id="verktoylinje" aria-label="Snarveier" hidden>
+    <button class="menyvalg tekstvalg" type="button" data-panel="profil" hidden>Min profil</button>
+    <button class="menyvalg tekstvalg" type="button" data-panel="medlemmer" hidden>Medlemmer</button>
+    <button class="menyvalg tekstvalg" type="button" data-panel="arkiv" hidden>Arkiv</button>
+  </nav>
+
+  <header>
+    <h1>Jærcognacens venner</h1>
+    <p class="undertittel">Vi deler smaksprøver, opplevelser og anbefalinger. Registrer deg, så er du med med en gang.</p>
+
+    <nav class="meny" id="meny" aria-label="Seksjoner">
+      <div class="glassrad">
+        <button class="menyvalg glass" type="button" data-panel="VS" disabled style="--niva:var(--vs);--vent:0.0s">
+          <svg viewBox="0 0 24 34" aria-hidden="true">
+            <path class="veske" d="M5.2,10.5 A6.8,6.8 0 0 0 18.8,10.5 Z"/>
+            <path class="strek" d="M4.6,3.6 L4.6,10 A7.4,7.4 0 0 0 19.4,10 L19.4,3.6"/>
+            <path class="strek" d="M3.8,3.6 L20.2,3.6"/>
+            <path class="strek" d="M12,17.4 L12,26.4"/>
+            <path class="strek" d="M7.6,26.8 L16.4,26.8"/>
+          </svg>
+          <span class="navnelapp">VS</span>
+        </button>
+        <button class="menyvalg glass" type="button" data-panel="VSOP" disabled style="--niva:var(--vsop);--vent:0.08s">
+          <svg viewBox="0 0 24 34" aria-hidden="true">
+            <path class="veske" d="M5.2,10.5 A6.8,6.8 0 0 0 18.8,10.5 Z"/>
+            <path class="strek" d="M4.6,3.6 L4.6,10 A7.4,7.4 0 0 0 19.4,10 L19.4,3.6"/>
+            <path class="strek" d="M3.8,3.6 L20.2,3.6"/>
+            <path class="strek" d="M12,17.4 L12,26.4"/>
+            <path class="strek" d="M7.6,26.8 L16.4,26.8"/>
+          </svg>
+          <span class="navnelapp">VSOP</span>
+        </button>
+        <button class="menyvalg glass" type="button" data-panel="XO" disabled style="--niva:var(--xo);--vent:0.16s">
+          <svg viewBox="0 0 24 34" aria-hidden="true">
+            <path class="veske" d="M5.2,10.5 A6.8,6.8 0 0 0 18.8,10.5 Z"/>
+            <path class="strek" d="M4.6,3.6 L4.6,10 A7.4,7.4 0 0 0 19.4,10 L19.4,3.6"/>
+            <path class="strek" d="M3.8,3.6 L20.2,3.6"/>
+            <path class="strek" d="M12,17.4 L12,26.4"/>
+            <path class="strek" d="M7.6,26.8 L16.4,26.8"/>
+          </svg>
+          <span class="navnelapp">XO</span>
+        </button>
+        <button class="menyvalg glass" type="button" data-panel="Blending" disabled style="--niva:var(--blending);--vent:0.24s">
+          <svg viewBox="0 0 24 34" aria-hidden="true">
+            <path class="veske" d="M5.2,10.5 A6.8,6.8 0 0 0 18.8,10.5 Z"/>
+            <path class="strek" d="M4.6,3.6 L4.6,10 A7.4,7.4 0 0 0 19.4,10 L19.4,3.6"/>
+            <path class="strek" d="M3.8,3.6 L20.2,3.6"/>
+            <path class="strek" d="M12,17.4 L12,26.4"/>
+            <path class="strek" d="M7.6,26.8 L16.4,26.8"/>
+          </svg>
+          <span class="navnelapp">Blending</span>
+        </button>
+        <button class="menyvalg glass" type="button" data-panel="Cocktail" disabled style="--niva:var(--cocktail);--vent:0.32s">
+          <svg viewBox="0 0 24 34" aria-hidden="true">
+            <path class="veske" d="M5.2,10.5 A6.8,6.8 0 0 0 18.8,10.5 Z"/>
+            <path class="strek" d="M4.6,3.6 L4.6,10 A7.4,7.4 0 0 0 19.4,10 L19.4,3.6"/>
+            <path class="strek" d="M3.8,3.6 L20.2,3.6"/>
+            <path class="strek" d="M12,17.4 L12,26.4"/>
+            <path class="strek" d="M7.6,26.8 L16.4,26.8"/>
+          </svg>
+          <span class="navnelapp">Cocktail</span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <div id="oppsettmangler" class="melding feil" hidden>
+    Nettstedet er ikke koblet til Firebase ennå. Fyll inn nøklene i <code>firebase-config.js</code>.
+  </div>
+
+  <main>
+    <section id="visGjest" hidden>
+      <div class="faner" role="tablist">
+        <button class="fane" id="faneMedlem" role="tab" aria-selected="true" aria-controls="panelMedlem">Bli medlem</button>
+        <button class="fane" id="faneInn" role="tab" aria-selected="false" aria-controls="panelInn">Logg inn</button>
+      </div>
+
+      <div id="panelMedlem" role="tabpanel" aria-labelledby="faneMedlem">
+        <h2>Bli medlem</h2>
+        <p class="hjelp">Navn, mobil og e-post brukes til medlemslista og til innkalling til samlinger. Ingenting deles utenfor foreningen.</p>
+        <div id="meldingReg" class="melding" hidden></div>
+        <form id="skjemaReg" novalidate>
+          <div class="felt">
+            <label for="regNavn">Fullt navn</label>
+            <input id="regNavn" name="navn" autocomplete="name" required>
+          </div>
+          <div class="felt">
+            <label for="regMobil">Mobil</label>
+            <input id="regMobil" name="mobil" type="tel" inputmode="tel" autocomplete="tel" placeholder="400 00 000" required>
+          </div>
+          <div class="felt">
+            <label for="regKlubb">Klubbtilhørighet</label>
+            <input id="regKlubb" name="klubb" autocomplete="organization">
+            <p class="hjelp">Valgfritt. Er du med i en annen cognacklubb, skriv den her.</p>
+          </div>
+          <div class="felt">
+            <label for="regEpost">E-post</label>
+            <input id="regEpost" name="epost" type="email" autocomplete="email" required>
+          </div>
+          <div class="felt">
+            <label for="regPassord">Passord</label>
+            <input id="regPassord" name="passord" type="password" autocomplete="new-password" minlength="8" required>
+            <p class="hjelp">Minst 8 tegn.</p>
+          </div>
+          <button class="knapp" type="submit">Registrer meg</button>
+        </form>
+      </div>
+
+      <div id="panelInn" role="tabpanel" aria-labelledby="faneInn" hidden>
+        <h2>Logg inn</h2>
+        <div id="meldingInn" class="melding" hidden></div>
+        <form id="skjemaInn" novalidate>
+          <div class="felt">
+            <label for="innEpost">E-post</label>
+            <input id="innEpost" type="email" autocomplete="email" required>
+          </div>
+          <div class="felt">
+            <label for="innPassord">Passord</label>
+            <input id="innPassord" type="password" autocomplete="current-password" required>
+          </div>
+          <button class="knapp" type="submit">Logg inn</button>
+        </form>
+        <p class="hjelp" style="margin-top:1.25rem">
+          Glemt passordet? <button class="lenkeknapp" id="knappNyttPassord" type="button">Send meg en lenke</button>
+        </p>
+      </div>
+    </section>
+
+    <section id="visUbekreftet" hidden>
+      <h2>Bekreft e-postadressen</h2>
+      <p>Vi har sendt en lenke til <strong id="ubekreftetEpost"></strong>. Klikk på lenken i e-posten, og kom så tilbake hit.</p>
+      <p class="hjelp">Finner du den ikke, se i søppelpost. Avsenderen er Jærcognacens venner.</p>
+      <div id="meldingUbekreftet" class="melding" hidden></div>
+      <button class="knapp" id="knappSjekkIgjen" type="button">Jeg har bekreftet</button>
+      <p style="margin-top:1.5rem;display:flex;gap:.5rem;flex-wrap:wrap">
+        <button class="knapp stille liten" id="knappSendPaNytt" type="button">Send lenken på nytt</button>
+        <button class="knapp stille liten" id="knappUtUbekreftet" type="button">Logg ut</button>
+      </p>
+    </section>
+
+    <section id="visFullfor" hidden>
+      <h2>Fullfør profilen</h2>
+      <p class="hjelp">Registreringen ble avbrutt før profilen var lagret. Fyll ut resten, så er du inne.</p>
+      <div id="meldingFullfor" class="melding" hidden></div>
+      <form id="skjemaFullfor" novalidate>
+        <div class="felt">
+          <label for="fNavn">Fullt navn</label>
+          <input id="fNavn" autocomplete="name" required>
+        </div>
+        <div class="felt">
+          <label for="fMobil">Mobil</label>
+          <input id="fMobil" type="tel" inputmode="tel" autocomplete="tel" required>
+        </div>
+        <div class="felt">
+          <label for="fKlubb">Klubbtilhørighet</label>
+          <input id="fKlubb" autocomplete="organization">
+          <p class="hjelp">Valgfritt.</p>
+        </div>
+        <button class="knapp" type="submit">Lagre profil</button>
+      </form>
+    </section>
+
+    <section id="visMedlem" hidden>
+      <div id="meldingMedlem" class="melding" hidden></div>
+
+      <div class="boks" id="panelProfil">
+        <h2 id="hilsen">Min side</h2>
+        <div class="kontakt">
+          <span class="mobil hjelp" id="minInfo"></span>
+          <span class="hjelp" id="minEpost"></span>
+        </div>
+        <p class="klubb" id="minKlubb" hidden></p>
+
+        <p class="velkomst">Hei, kjære jærcognacsvenn. Vi vil at du skal være med og bidra til at alle som er interessert i cognac kan dele sine opplevelser og smaksprøver, og komme med anbefalinger på merker eller andre ting. Målet vårt er å samle inn flere smaksseanser som nettopp du gjør eller har vært med på, slik at vi får en god oversikt over hvor cognacen står hos Jærcognacens venner.</p>
+
+        <button class="knapp stille liten" id="knappUt" type="button">Logg ut</button>
+      </div>
+
+      <div class="boks" id="panelMedlemmer" hidden>
+        <h3 id="tittelMedlemmer">Medlemmer</h3>
+        <div id="listeAktive"></div>
+      </div>
+
+      <div class="boks" id="panelKlasse" hidden>
+        <h3 id="klasseTittel"></h3>
+        <div id="klasseInnhold"></div>
+      </div>
+
+      <div class="boks" id="panelArkiv" hidden>
+        <h3>Arkiv</h3>
+
+        <div class="sortering" style="margin-top:.5rem">
+          <button class="arkivfane" type="button" data-del="smakinger" aria-current="true">Smakinger</button>
+          <button class="arkivfane" type="button" data-del="blending">Blending</button>
+        </div>
+
+        <div id="meldingArkiv" class="melding" hidden style="margin-top:1.5rem"></div>
+
+        <div id="arkivSmakinger">
+          <p class="hjelp" style="margin-top:1.5rem">Smakinger fra den gamle poengbasen. Poengene hører til initialene som ble brukt den gangen, og de teller med i snittet under VS, VSOP og XO.</p>
+
+          <div id="adminImport" hidden>
+            <button class="knapp stille liten" id="knappImport" type="button">Importer smakinger</button>
+            <form id="skjemaImport" hidden style="margin-top:1.25rem">
+              <div class="felt">
+                <label for="importData">Data som JSON</label>
+                <textarea id="importData" rows="8" placeholder='{"medlemmer": {...}, "smakinger": [...]}'></textarea>
+                <p class="hjelp">Samme smaking kan importeres flere ganger uten å bli liggende dobbelt.</p>
+              </div>
+              <button class="knapp" type="submit">Importer</button>
+            </form>
+          </div>
+
+          <div class="sortering">
+            <button class="sortvalg" type="button" data-sort="dato" aria-current="true">Nyeste først</button>
+            <button class="sortvalg" type="button" data-sort="snitt">Beste først</button>
+          </div>
+          <div id="listeArkiv" style="margin-top:1rem"></div>
+        </div>
+
+        <div id="arkivBlending" hidden>
+          <p class="hjelp" style="margin-top:1.5rem">Blendinger fra den gamle poengbasen. Der er bare treff og bom notert, ikke hva den enkelte gjettet eller hvilken karakter som ble gitt.</p>
+
+          <div id="adminImportBlending" hidden>
+            <button class="knapp stille liten" id="knappImportBlending" type="button">Importer blendinger</button>
+            <form id="skjemaImportBlending" hidden style="margin-top:1.25rem">
+              <div class="felt">
+                <label for="importBlendingData">Data som JSON</label>
+                <textarea id="importBlendingData" rows="8" placeholder='{"medlemmer": {...}, "blendinger": [...]}'></textarea>
+                <p class="hjelp">Samme blending kan importeres flere ganger uten å bli liggende dobbelt.</p>
+              </div>
+              <button class="knapp" type="submit">Importer</button>
+            </form>
+          </div>
+
+          <div id="listeArkivBlending" style="margin-top:1.5rem"></div>
+
+          <h3 style="margin-top:2.5rem">Treffprosent i arkivet</h3>
+          <div id="listeArkivRangering"></div>
+        </div>
+      </div>
+
+      <div class="boks" id="panelBlending" hidden>
+        <h3>Blending</h3>
+        <ol class="framgang">
+          <li>Tre glass fra samme klasse settes fram, A til C fra venstre. Ingen vet hva som står hvor.</li>
+          <li>Alle noterer på papir hva de tror hvert glass er, og gir hvert glass en karakter fra 1,00 til 6,00.</li>
+          <li>Admin legger inn blendingen med fasiten, og taster inn svarene fra lappene mens dere sitter samlet.</li>
+          <li>Treffprosent og klassetabell regner seg ut selv. Antall rette blir 0, 1 eller 3 — to rette er umulig når tre skal parres.</li>
+        </ol>
+
+        <div id="meldingBlending" class="melding" hidden></div>
+
+        <div id="adminNyBlending" hidden>
+          <button class="knapp liten" id="knappNyBlending" type="button">Ny blending</button>
+          <form id="skjemaBlending" hidden style="margin-top:1.25rem">
+            <div class="felt">
+              <label for="bDato">Dato</label>
+              <input id="bDato" type="date" required>
+            </div>
+            <div class="felt">
+              <label for="bKlasse">Klassifisering</label>
+              <select id="bKlasse">
+                <option value="VS">VS</option>
+                <option value="VSOP">VSOP</option>
+                <option value="XO" selected>XO</option>
+              </select>
+            </div>
+            <div class="felt">
+              <label for="bA">Glass A</label>
+              <input id="bA" placeholder="Cognac i glass A" required>
+            </div>
+            <div class="felt">
+              <label for="bB">Glass B</label>
+              <input id="bB" placeholder="Cognac i glass B" required>
+            </div>
+            <div class="felt">
+              <label for="bC">Glass C</label>
+              <input id="bC" placeholder="Cognac i glass C" required>
+            </div>
+            <button class="knapp" type="submit">Lagre blending</button>
+          </form>
+        </div>
+
+        <div id="listeBlendinger" style="margin-top:1.5rem"></div>
+
+        <h3 style="margin-top:2.5rem">Treffprosent total</h3>
+        <p class="hjelp">Arkivet fra 2019 og alle nye blendinger under ett. Regnet av glassene hver enkelt faktisk har smakt — vertskvelder og fravær holdes utenfor. Over to tredeler rette gir tittelen master blender, over halvparten gir blender.</p>
+        <div id="listeRangering"></div>
+
+      </div>
+    </section>
+  </main>
+
+  <footer class="bunn">
+    Spørsmål om medlemskap eller registrerte opplysninger rettes til admin. Du kan når som helst be om å bli slettet fra registeret.
+    <span class="versjon">Versjon 1.3</span>
+  </footer>
+</div>
+
+<script type="module">
+
+import { firebaseConfig } from "./firebase-config.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut,
+  onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, collection, getDocs,
+  query, orderBy, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const $ = (id) => document.getElementById(id);
+
+/* ---------- Oppsett ---------- */
+if (!firebaseConfig.apiKey || firebaseConfig.apiKey.startsWith("DIN_")) {
+  $("oppsettmangler").hidden = false;
+  throw new Error("Firebase-konfigurasjon mangler");
+}
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// Settes mens registreringen pågår, slik at ruteren ikke bytter visning
+// før profilen faktisk er skrevet til Firestore.
+let registrerer = false;
+
+/* ---------- Hjelpere ---------- */
+function vis(id) {
+  ["visGjest", "visUbekreftet", "visFullfor", "visMedlem"].forEach(v => { $(v).hidden = (v !== id); });
+}
+function melding(id, tekst, type) {
+  const el = $(id);
+  el.textContent = tekst;
+  el.className = "melding" + (type ? " " + type : "");
+  el.hidden = !tekst;
+}
+function initialerFraNavn(navn) {
+  const deler = (navn || "").trim().split(/\s+/).filter(Boolean);
+  if (!deler.length) return "–";
+  if (deler.length === 1) return deler[0].slice(0, 2).toUpperCase();
+  return (deler[0][0] + deler[deler.length - 1][0]).toUpperCase();
+}
+function reisMobil(v) {
+  return (v || "").replace(/[\s-]/g, "");
+}
+function gyldigMobil(v) {
+  return /^(\+47)?\d{8}$/.test(v);
+}
+function feiltekst(e) {
+  const k = e && e.code ? e.code : "";
+  if (k === "auth/email-already-in-use") return "E-postadressen er allerede registrert. Logg inn i stedet.";
+  if (k === "auth/invalid-email") return "E-postadressen ser ikke riktig ut.";
+  if (k === "auth/weak-password") return "Passordet må være minst 8 tegn.";
+  if (k === "auth/invalid-credential" || k === "auth/wrong-password" || k === "auth/user-not-found")
+    return "Feil e-post eller passord.";
+  if (k === "auth/too-many-requests") return "For mange forsøk. Prøv igjen om noen minutter.";
+  if (k === "permission-denied") return "Du har ikke tilgang til dette.";
+  return "Noe gikk galt: " + (e && e.message ? e.message : "ukjent feil");
+}
+
+/* ---------- Meny ---------- */
+function apnePanel(navn) {
+  const erKlasse = ["VS", "VSOP", "XO", "Cocktail"].includes(navn);
+  $("panelProfil").hidden = navn !== "profil";
+  $("panelMedlemmer").hidden = navn !== "medlemmer";
+  $("panelArkiv").hidden = navn !== "arkiv";
+  $("panelKlasse").hidden = !erKlasse;
+  $("panelBlending").hidden = navn !== "Blending";
+  if (erKlasse) { $("klasseTittel").textContent = navn; tegnKlasse(navn); }
+  if (navn === "Blending") tegnBlending();
+  if (navn === "arkiv") tegnArkiv();
+  document.querySelectorAll(".menyvalg").forEach(b => {
+    b.setAttribute("aria-current", String(b.dataset.panel === navn));
+  });
+}
+
+function menyTilgjengelig(paa) {
+  $("verktoylinje").hidden = !paa;
+  document.querySelectorAll(".menyvalg").forEach(b => {
+    const personlig = ["profil", "medlemmer"].includes(b.dataset.panel);
+    if (personlig) b.hidden = !paa;
+    else if (b.dataset.panel === "arkiv") b.hidden = !(paa && erJcc);
+    else if (b.dataset.panel === "Blending") {
+      b.hidden = !(paa && erJcc);
+      b.disabled = !(paa && erJcc);
     }
+    else b.disabled = !paa;
+    if (!paa) b.removeAttribute("aria-current");
+  });
+}
 
-    function erAdmin() {
-      return innlogget()
-        && exists(/databases/$(database)/documents/medlemmer/$(request.auth.uid))
-        && meg().rolle == 'admin';
+document.querySelectorAll(".menyvalg").forEach(b => {
+  b.addEventListener("click", () => apnePanel(b.dataset.panel));
+});
+
+/* ---------- Faner ---------- */
+$("faneMedlem").addEventListener("click", () => byttFane(true));
+$("faneInn").addEventListener("click", () => byttFane(false));
+function byttFane(medlem) {
+  $("faneMedlem").setAttribute("aria-selected", String(medlem));
+  $("faneInn").setAttribute("aria-selected", String(!medlem));
+  $("panelMedlem").hidden = !medlem;
+  $("panelInn").hidden = medlem;
+}
+
+/* ---------- Lagre profil ---------- */
+async function lagreProfil(uid, { navn, mobil, epost, klubb }) {
+  await setDoc(doc(db, "medlemmer", uid), {
+    navn, mobil, epost,
+    klubb: klubb || "",
+    jcc: false,
+    status: "aktiv",
+    rolle: "medlem",
+    innmeldt: serverTimestamp()
+  });
+}
+
+/* ---------- Registrering ---------- */
+$("skjemaReg").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const knapp = e.target.querySelector("button");
+  const navn = $("regNavn").value.trim();
+  const mobil = reisMobil($("regMobil").value);
+  const klubb = $("regKlubb").value.trim();
+  const epost = $("regEpost").value.trim();
+  const passord = $("regPassord").value;
+
+  if (navn.length < 2) return melding("meldingReg", "Skriv inn fullt navn.", "feil");
+  if (!gyldigMobil(mobil)) return melding("meldingReg", "Mobilnummeret må være 8 siffer.", "feil");
+  if (passord.length < 8) return melding("meldingReg", "Passordet må være minst 8 tegn.", "feil");
+
+  knapp.disabled = true;
+  registrerer = true;
+  melding("meldingReg", "Registrerer …");
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, epost, passord);
+    await lagreProfil(cred.user.uid, { navn, mobil, epost, klubb });
+    try { await sendEmailVerification(cred.user); } catch (_) {}
+    registrerer = false;
+    melding("meldingReg", "", "");
+    visUbekreftet(cred.user, "Registreringen er lagret. Ett steg gjenstår.", "ok");
+  } catch (err) {
+    registrerer = false;
+    if (auth.currentUser) {
+      // Kontoen ble opprettet, men profilen ble ikke lagret.
+      $("fNavn").value = navn;
+      $("fMobil").value = mobil;
+      $("fKlubb").value = klubb;
+      vis("visFullfor");
+      melding("meldingFullfor", feiltekst(err), "feil");
+    } else {
+      melding("meldingReg", feiltekst(err), "feil");
     }
+  } finally {
+    knapp.disabled = false;
+  }
+});
 
-    function bekreftetEpost() {
-      return innlogget() && request.auth.token.email_verified == true;
+/* ---------- Fullfør profil ---------- */
+$("skjemaFullfor").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const bruker = auth.currentUser;
+  if (!bruker) return;
+  const navn = $("fNavn").value.trim();
+  const mobil = reisMobil($("fMobil").value);
+  const klubb = $("fKlubb").value.trim();
+  if (navn.length < 2) return melding("meldingFullfor", "Skriv inn fullt navn.", "feil");
+  if (!gyldigMobil(mobil)) return melding("meldingFullfor", "Mobilnummeret må være 8 siffer.", "feil");
+  try {
+    await lagreProfil(bruker.uid, { navn, mobil, epost: bruker.email, klubb });
+    await tegnMedlem(bruker);
+  } catch (err) {
+    melding("meldingFullfor", feiltekst(err), "feil");
+  }
+});
+
+/* ---------- Innlogging ---------- */
+$("skjemaInn").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  melding("meldingInn", "");
+  try {
+    await signInWithEmailAndPassword(auth, $("innEpost").value.trim(), $("innPassord").value);
+  } catch (err) {
+    melding("meldingInn", feiltekst(err), "feil");
+  }
+});
+
+$("knappNyttPassord").addEventListener("click", async () => {
+  const epost = $("innEpost").value.trim();
+  if (!epost) return melding("meldingInn", "Skriv inn e-postadressen din først.", "feil");
+  try {
+    await sendPasswordResetEmail(auth, epost);
+    melding("meldingInn", "Sjekk innboksen – vi har sendt deg en lenke for nytt passord.", "ok");
+  } catch (err) {
+    melding("meldingInn", feiltekst(err), "feil");
+  }
+});
+
+$("knappUt").addEventListener("click", () => signOut(auth));
+$("knappUtUbekreftet").addEventListener("click", () => signOut(auth));
+
+function visUbekreftet(bruker, tekst, type) {
+  menyTilgjengelig(false);
+  $("ubekreftetEpost").textContent = bruker.email;
+  melding("meldingUbekreftet", tekst || "", type);
+  vis("visUbekreftet");
+}
+
+$("knappSjekkIgjen").addEventListener("click", async (e) => {
+  const knapp = e.currentTarget;
+  if (!auth.currentUser) return;
+  knapp.disabled = true;
+  try {
+    await auth.currentUser.reload();
+    if (auth.currentUser.emailVerified) {
+      // Uten dette sier det gamle beviset fortsatt at adressen er ubekreftet.
+      await auth.currentUser.getIdToken(true);
+      await tegnMedlem(auth.currentUser);
+      melding("meldingMedlem", "E-postadressen er bekreftet. Du er nå registrert som medlem i Jærcognacens venner.", "ok");
+    } else {
+      melding("meldingUbekreftet", "Adressen er ikke bekreftet ennå. Åpne e-posten og klikk på lenken.", "feil");
     }
+  } catch (err) {
+    melding("meldingUbekreftet", feiltekst(err), "feil");
+  } finally {
+    knapp.disabled = false;
+  }
+});
 
-    function erAktiv() {
-      return bekreftetEpost()
-        && exists(/databases/$(database)/documents/medlemmer/$(request.auth.uid))
-        && meg().status == 'aktiv';
-    }
+$("knappSendPaNytt").addEventListener("click", async (e) => {
+  const knapp = e.currentTarget;
+  if (!auth.currentUser) return;
+  knapp.disabled = true;
+  try {
+    await sendEmailVerification(auth.currentUser);
+    melding("meldingUbekreftet", "Lenken er sendt på nytt. Sjekk innboksen, og eventuelt søppelpost.", "ok");
+  } catch (err) {
+    melding("meldingUbekreftet", feiltekst(err), "feil");
+  } finally {
+    knapp.disabled = false;
+  }
+});
 
-    function erJcc() {
-      return erAdmin() || (erAktiv() && meg().get('jcc', false) == true);
-    }
+/* ---------- Medlemssiden ---------- */
+function penMobil(nr) {
+  const rein = (nr || "").replace(/\D/g, "");
+  if (rein.length === 8) return rein.slice(0, 3) + " " + rein.slice(3, 5) + " " + rein.slice(5);
+  return nr || "";
+}
 
-    match /medlemmer/{uid} {
-      allow get: if innlogget() && (request.auth.uid == uid || erAktiv());
-      allow list: if erAktiv();
+function kort(m) {
+  const rad = document.createElement("div");
+  rad.className = "medlem";
 
-      allow create: if innlogget()
-        && request.auth.uid == uid
-        && request.resource.data.status == 'aktiv'
-        && request.resource.data.rolle == 'medlem'
-        && request.resource.data.navn is string
-        && request.resource.data.mobil is string
-        && request.resource.data.mobil.size() >= 8;
+  const merke = document.createElement("div");
+  merke.className = "init";
+  merke.textContent = initialerFraNavn(m.navn);
 
-      allow update: if erAdmin()
-        || (innlogget() && request.auth.uid == uid
-            && request.resource.data.status == resource.data.status
-            && request.resource.data.rolle == resource.data.rolle
-            && request.resource.data.get('jcc', false) == resource.data.get('jcc', false)
-            && request.resource.data.get('initialer', '') == resource.data.get('initialer', ''));
+  const info = document.createElement("div");
+  info.className = "info";
 
-      allow delete: if erAdmin();
-    }
+  const navn = document.createElement("div");
+  navn.className = "navn";
+  navn.textContent = m.navn;
+  info.append(navn);
 
-    match /blendinger/{id} {
-      allow read: if erJcc();
-      allow write: if erAdmin();
-    }
+  const kontakt = document.createElement("div");
+  kontakt.className = "kontakt";
+  if (m.mobil) {
+    const tlf = document.createElement("a");
+    tlf.className = "mobil";
+    tlf.href = "tel:" + (m.mobil.startsWith("+") ? m.mobil : "+47" + m.mobil);
+    tlf.textContent = penMobil(m.mobil);
+    kontakt.append(tlf);
+  }
+  if (m.epost) {
+    const post = document.createElement("a");
+    post.href = "mailto:" + m.epost;
+    post.textContent = m.epost;
+    kontakt.append(post);
+  }
+  info.append(kontakt);
 
-    match /historikk/{id} {
-      allow read: if erJcc();
-      allow write: if erAdmin();
-    }
+  if (m.klubb) {
+    const klubb = document.createElement("div");
+    klubb.className = "klubb";
+    klubb.textContent = m.klubb;
+    info.append(klubb);
+  }
 
-    match /blendingarkiv/{id} {
-      allow read: if erJcc();
-      allow write: if erAdmin();
-    }
+  rad.append(merke, info);
 
-    match /arkiv/{doknavn} {
-      allow read: if erJcc();
-      allow write: if erAdmin();
-    }
+  if (m.jcc) {
+    const stempel = document.createElement("span");
+    stempel.className = "jccmerke";
+    stempel.textContent = "JCC";
+    rad.append(stempel);
+  }
 
-    match /sammendrag/{klasse} {
-      allow read: if erAktiv();
-      allow write: if erAdmin();
+  if (m.initialer) {
+    const ini = document.createElement("span");
+    ini.className = "tittelmerke";
+    ini.textContent = m.initialer;
+    rad.append(ini);
+  }
+
+  if (erAdmin) {
+    const sett = document.createElement("button");
+    sett.className = "knapp stille liten";
+    sett.type = "button";
+    sett.style.marginLeft = "auto";
+    sett.textContent = m.initialer ? "Endre initialer" : "Sett initialer";
+    sett.addEventListener("click", async () => {
+      const svar = window.prompt(
+        "Initialer i den gamle poengbasen for " + m.navn + ".\nBlank ut feltet for å fjerne koblingen.",
+        m.initialer || "");
+      if (svar === null) return;
+      const rein = svar.trim().toUpperCase();
+      sett.disabled = true;
+      try {
+        await updateDoc(doc(db, "medlemmer", m.id), { initialer: rein });
+        m.initialer = rein;
+        tegnMedlemsliste();
+      } catch (err) {
+        melding("meldingMedlem", feiltekst(err), "feil");
+        sett.disabled = false;
+      }
+    });
+    rad.append(sett);
+  }
+
+  if (erAdmin && m.id !== minUid) {
+    const knapp = document.createElement("button");
+    knapp.className = "knapp stille liten";
+    knapp.type = "button";
+    knapp.textContent = m.jcc ? "Fjern JCC" : "Gjør til JCC";
+    knapp.addEventListener("click", async () => {
+      knapp.disabled = true;
+      try {
+        await updateDoc(doc(db, "medlemmer", m.id), { jcc: !m.jcc });
+        m.jcc = !m.jcc;
+        tegnMedlemsliste();
+      } catch (err) {
+        melding("meldingMedlem", feiltekst(err), "feil");
+        knapp.disabled = false;
+      }
+    });
+    rad.append(knapp);
+  }
+
+  return rad;
+}
+
+function tegnMedlemsliste() {
+  const boks = $("listeAktive");
+  boks.textContent = "";
+  if (!medlemmer.length) {
+    boks.append(tomtSvar("Ingen medlemmer registrert ennå."));
+  } else {
+    medlemmer.forEach(m => boks.append(kort(m)));
+  }
+  $("tittelMedlemmer").innerHTML = "Medlemmer <span class=\"antall\">(" + medlemmer.length + ")</span>";
+}
+
+
+async function tegnMedlem(bruker) {
+  const snap = await getDoc(doc(db, "medlemmer", bruker.uid));
+  if (!snap.exists()) { vis("visFullfor"); return; }
+  const meg = snap.data();
+  erAdmin = meg.rolle === "admin";
+  erJcc = erAdmin || meg.jcc === true;
+  minUid = bruker.uid;
+
+  vis("visMedlem");
+  menyTilgjengelig(true);
+  if ($("panelProfil").hidden && $("panelMedlemmer").hidden && $("panelKlasse").hidden && $("panelBlending").hidden && $("panelArkiv").hidden) apnePanel("profil");
+  $("hilsen").textContent = "Hei, " + meg.navn.split(" ")[0];
+  $("minInfo").textContent = penMobil(meg.mobil);
+  $("minEpost").textContent = meg.epost;
+  $("minKlubb").textContent = meg.klubb || "";
+  $("minKlubb").hidden = !meg.klubb;
+
+  if (meg.status !== "aktiv") return;
+
+  const alle = [];
+  const q = query(collection(db, "medlemmer"), orderBy("navn"));
+  let treff;
+  try {
+    treff = await getDocs(q);
+  } catch (err) {
+    if (err && err.code === "permission-denied" && auth.currentUser) {
+      // Beviset kan være utstedt før adressen ble bekreftet. Hent et ferskt og prøv igjen.
+      await auth.currentUser.getIdToken(true);
+      treff = await getDocs(q);
+    } else {
+      throw err;
     }
   }
+  treff.forEach(d => alle.push({ id: d.id, ...d.data() }));
+  medlemmer = alle;
+
+  // Hver del lastes for seg, slik at én feil ikke tar med seg resten
+  const feilet = [];
+  const hent = async (navn, fn) => {
+    try { await fn(); } catch (err) { feilet.push(navn + " (" + (err.code || err.message) + ")"); }
+  };
+  if (erJcc) {
+    await hent("blendinger", lastBlendinger);
+    await hent("arkiv", lastArkiv);
+    await hent("blendingarkiv", lastBlendingArkiv);
+  } else {
+    blendinger = []; historikk = []; blendingArkiv = [];
+  }
+  await hent("sammendrag", lastSammendrag);
+  if (feilet.length) {
+    melding("meldingMedlem", "Klarte ikke hente: " + feilet.join(", ")
+      + ". Sjekk at de nyeste sikkerhetsreglene er publisert i Firebase.", "feil");
+  }
+
+  tegnMedlemsliste();
 }
+
+/* ---------- Blending ---------- */
+// En blending er tre glass, A til C, fra samme klasse. Fasiten sier hvilken
+// cognac som sto hvor. Hvert medlem gjetter og gir karakter fra 1,00 til 6,00.
+// Riktige gjett kan bare bli 0, 1 eller 3 – to rette er umulig når tre parres.
+
+let blendinger = [];
+let medlemmer = [];
+let erAdmin = false;
+let erJcc = false;
+let apenBlending = null;
+let minUid = null;
+let sammendrag = {};
+
+const GLASS = ["A", "B", "C"];
+
+function tall(x, des) {
+  return x.toFixed(des === undefined ? 2 : des).replace(".", ",");
+}
+
+function norskDato(iso) {
+  if (!iso) return "";
+  const d = iso.split("-");
+  return d.length === 3 ? d[2] + "." + d[1] + "." + d[0] : iso;
+}
+
+function navnPa(uid) {
+  const m = medlemmer.find(x => x.id === uid);
+  return m ? m.navn : "Ukjent medlem";
+}
+
+async function lastBlendinger() {
+  blendinger = [];
+  const treff = await getDocs(collection(db, "blendinger"));
+  treff.forEach(d => blendinger.push({ id: d.id, ...d.data() }));
+  blendinger.sort((a, b) => (b.dato || "").localeCompare(a.dato || ""));
+}
+
+// Snittkarakter per cognac i én klasse, høyeste først.
+function klasseTabell(klasse) {
+  const samlet = {};
+  blendinger
+    .filter(b => b.klassifisering === klasse)
+    .forEach(b => {
+      GLASS.forEach(g => {
+        const navn = b.fasit[g];
+        if (!samlet[navn]) samlet[navn] = { poeng: [], ganger: 0 };
+        samlet[navn].ganger += 1;
+        Object.keys(b.svar || {}).forEach(uid => {
+          const sv = b.svar[uid][g];
+          if (sv && typeof sv.poeng === "number") samlet[navn].poeng.push(sv.poeng);
+        });
+      });
+    });
+  historikk
+    .filter(h => h.klassifisering === klasse)
+    .forEach(h => {
+      if (!samlet[h.cognac]) samlet[h.cognac] = { poeng: [], ganger: 0 };
+      samlet[h.cognac].ganger += 1;
+      Object.values(h.poeng || {}).forEach(p => {
+        if (typeof p === "number") samlet[h.cognac].poeng.push(p);
+      });
+    });
+
+  return Object.keys(samlet)
+    .map(navn => {
+      const d = samlet[navn];
+      const snitt = d.poeng.length ? d.poeng.reduce((a, b) => a + b, 0) / d.poeng.length : null;
+      return { navn, snitt, antall: d.poeng.length, ganger: d.ganger };
+    })
+    .sort((a, b) => (b.snitt || 0) - (a.snitt || 0));
+}
+
+// Admin skriver de tre beste i hver klasse dit medlemmene kan lese dem.
+async function skrivSammendrag() {
+  for (const klasse of ["VS", "VSOP", "XO"]) {
+    const topp = klasseTabell(klasse)
+      .filter(c => c.snitt !== null)
+      .slice(0, 3)
+      .map(c => ({ navn: c.navn, snitt: c.snitt, antall: c.antall }));
+    await setDoc(doc(db, "sammendrag", klasse), { topp, oppdatert: serverTimestamp() });
+    sammendrag[klasse] = topp;
+  }
+}
+
+async function lastSammendrag() {
+  sammendrag = {};
+  const treff = await getDocs(collection(db, "sammendrag"));
+  treff.forEach(d => { sammendrag[d.id] = d.data().topp || []; });
+}
+
+function rettePoeng(b, uid) {
+  const svar = (b.svar || {})[uid];
+  if (!svar) return null;
+  let rette = 0;
+  GLASS.forEach(g => {
+    if (svar[g] && svar[g].gjett && svar[g].gjett === b.fasit[g]) rette++;
+  });
+  return rette;
+}
+
+function tomtSvar(tekst) {
+  const p = document.createElement("p");
+  p.className = "hjelp";
+  p.style.margin = "0";
+  p.textContent = tekst;
+  return p;
+}
+
+function radElement(tittel, under, verdi, svakVerdi) {
+  const rad = document.createElement("div");
+  rad.className = "rad";
+  const venstre = document.createElement("div");
+  venstre.className = "venstre";
+  const t = document.createElement("div");
+  t.className = "tittel";
+  t.textContent = tittel;
+  venstre.append(t);
+  if (under) {
+    const u = document.createElement("div");
+    u.className = "under";
+    u.textContent = under;
+    venstre.append(u);
+  }
+  rad.append(venstre);
+  if (verdi) {
+    const v = document.createElement("div");
+    v.className = "tall" + (svakVerdi ? " svak" : "");
+    v.textContent = verdi;
+    rad.append(v);
+  }
+  return rad;
+}
+
+/* ---------- Panelet for Blending ---------- */
+function tegnBlending() {
+  $("adminNyBlending").hidden = !erAdmin;
+  const liste = $("listeBlendinger");
+  liste.textContent = "";
+
+  if (!blendinger.length) {
+    liste.append(tomtSvar(erAdmin
+      ? "Ingen blendinger lagt inn ennå. Trykk «Ny blending» for å legge inn den første."
+      : "Ingen blendinger lagt inn ennå."));
+  } else {
+    blendinger.forEach(b => {
+      const antall = Object.keys(b.svar || {}).length;
+      const rad = radElement(
+        norskDato(b.dato) + " · " + b.klassifisering,
+        GLASS.map(g => g + ": " + b.fasit[g]).join("   "),
+        antall + (antall === 1 ? " svar" : " svar"),
+        true
+      );
+      rad.classList.add("valgbar");
+      rad.addEventListener("click", () => {
+        apenBlending = apenBlending === b.id ? null : b.id;
+        tegnBlending();
+      });
+      liste.append(rad);
+      if (apenBlending === b.id) liste.append(blendingDetalj(b));
+    });
+  }
+
+  tegnRangering();
+}
+
+function blendingDetalj(b) {
+  const boks = document.createElement("div");
+  boks.className = "detalj";
+
+  const deltakere = Object.keys(b.svar || {});
+  if (!deltakere.length) {
+    boks.append(tomtSvar("Ingen resultater lagt inn for denne blendingen ennå."));
+  } else {
+    deltakere
+      .map(uid => ({ uid, rette: rettePoeng(b, uid) }))
+      .sort((x, y) => y.rette - x.rette || navnPa(x.uid).localeCompare(navnPa(y.uid)))
+      .forEach(({ uid, rette }) => {
+        const svar = b.svar[uid];
+        const under = GLASS.map(g => {
+          const s = svar[g] || {};
+          const merke = s.gjett === b.fasit[g] ? "✓" : "✗";
+          return g + " " + merke + " " + (s.gjett || "–") + " " + tall(s.poeng || 0);
+        }).join("    ");
+        const rad = radElement(navnPa(uid), under, rette + "/3");
+        if (rette === 3) rad.querySelector(".tall").classList.add("rett");
+        boks.append(rad);
+      });
+  }
+
+  if (erAdmin) {
+    boks.append(svarSkjema(b, null));
+    boks.append(slettKnapp(b));
+  }
+  return boks;
+}
+
+/* ---------- Admin: legge inn ett medlems svar ---------- */
+function svarSkjema(b, fastUid) {
+  const form = document.createElement("form");
+  form.style.marginTop = "1.5rem";
+
+  const tittel = document.createElement("h3");
+  tittel.textContent = fastUid ? "Ditt svar" : "Legg inn svar";
+  form.append(tittel);
+
+  let velgMedlem = null;
+  if (fastUid) {
+    const info = document.createElement("p");
+    info.className = "hjelp";
+    info.textContent = "Svaret kan ikke endres etter at du har lagret det.";
+    form.append(info);
+  } else {
+    const feltMedlem = document.createElement("div");
+    feltMedlem.className = "felt";
+    const merkeMedlem = document.createElement("label");
+    merkeMedlem.textContent = "Medlem";
+    velgMedlem = document.createElement("select");
+    medlemmer.forEach(m => {
+      const o = document.createElement("option");
+      o.value = m.id;
+      o.textContent = m.navn;
+      velgMedlem.append(o);
+    });
+    feltMedlem.append(merkeMedlem, velgMedlem);
+    form.append(feltMedlem);
+  }
+
+  const kandidater = GLASS.map(g => b.fasit[g]);
+  const felter = {};
+
+  GLASS.forEach(g => {
+    const felt = document.createElement("div");
+    felt.className = "felt";
+
+    const merke = document.createElement("label");
+    merke.textContent = "Glass " + g;
+    felt.append(merke);
+
+    const gjett = document.createElement("select");
+    const tom = document.createElement("option");
+    tom.value = "";
+    tom.textContent = "Velg cognac";
+    gjett.append(tom);
+    kandidater.forEach(navn => {
+      const o = document.createElement("option");
+      o.value = navn;
+      o.textContent = navn;
+      gjett.append(o);
+    });
+
+    const poeng = document.createElement("input");
+    poeng.type = "number";
+    poeng.min = "1";
+    poeng.max = "6";
+    poeng.step = "0.01";
+    poeng.placeholder = "Karakter 1,00–6,00";
+
+    felt.append(gjett, poeng);
+    felter[g] = { gjett, poeng };
+    form.append(felt);
+  });
+
+  const lagre = document.createElement("button");
+  lagre.className = "knapp";
+  lagre.type = "submit";
+  lagre.textContent = "Lagre svar";
+  form.append(lagre);
+
+  // Fyll ut på nytt hvis medlemmet allerede har svart
+  const fyll = () => {
+    const s = (b.svar || {})[velgMedlem ? velgMedlem.value : fastUid] || {};
+    GLASS.forEach(g => {
+      felter[g].gjett.value = (s[g] && s[g].gjett) || "";
+      felter[g].poeng.value = s[g] && s[g].poeng ? s[g].poeng : "";
+    });
+  };
+  if (velgMedlem) velgMedlem.addEventListener("change", fyll);
+  fyll();
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const uid = velgMedlem ? velgMedlem.value : fastUid;
+    const svar = {};
+    for (const g of GLASS) {
+      const gjett = felter[g].gjett.value;
+      const poeng = parseFloat(felter[g].poeng.value);
+      if (!gjett) return melding("meldingBlending", "Velg en cognac for glass " + g + ".", "feil");
+      if (!(poeng >= 1 && poeng <= 6)) return melding("meldingBlending", "Karakteren for glass " + g + " må være mellom 1,00 og 6,00.", "feil");
+      svar[g] = { gjett, poeng };
+    }
+    const brukte = GLASS.map(g => svar[g].gjett);
+    if (new Set(brukte).size !== 3) {
+      return melding("meldingBlending", "Hver cognac kan bare brukes én gang. To rette er umulig.", "feil");
+    }
+    lagre.disabled = true;
+    try {
+      await updateDoc(doc(db, "blendinger", b.id), { ["svar." + uid]: svar });
+      b.svar = b.svar || {};
+      b.svar[uid] = svar;
+      await skrivSammendrag();
+      melding("meldingBlending", "Svaret til " + navnPa(uid) + " er lagret.", "ok");
+      tegnBlending();
+    } catch (err) {
+      melding("meldingBlending", feiltekst(err), "feil");
+    } finally {
+      lagre.disabled = false;
+    }
+  });
+
+  return form;
+}
+
+function slettKnapp(b) {
+  const rad = document.createElement("p");
+  rad.style.margin = "2rem 0 0";
+  const knapp = document.createElement("button");
+  knapp.className = "knapp stille liten";
+  knapp.type = "button";
+  knapp.textContent = "Slett denne blendingen";
+  knapp.addEventListener("click", async () => {
+    const antall = Object.keys(b.svar || {}).length;
+    const sikker = window.confirm(
+      "Slette blendingen fra " + norskDato(b.dato) + "?" +
+      (antall ? " " + antall + " svar blir borte, og karakterene forsvinner fra " + b.klassifisering + "-tabellen." : "") +
+      " Dette kan ikke angres."
+    );
+    if (!sikker) return;
+    knapp.disabled = true;
+    try {
+      await deleteDoc(doc(db, "blendinger", b.id));
+      blendinger = blendinger.filter(x => x.id !== b.id);
+      apenBlending = null;
+      await skrivSammendrag();
+      melding("meldingBlending", "Blendingen er slettet.", "ok");
+      tegnBlending();
+    } catch (err) {
+      melding("meldingBlending", feiltekst(err), "feil");
+      knapp.disabled = false;
+    }
+  });
+  rad.append(knapp);
+  return rad;
+}
+
+/* ---------- Ny blending ---------- */
+$("knappNyBlending").addEventListener("click", () => {
+  const form = $("skjemaBlending");
+  form.hidden = !form.hidden;
+  if (!form.hidden && !$("bDato").value) {
+    $("bDato").value = new Date().toISOString().slice(0, 10);
+  }
+});
+
+$("skjemaBlending").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const dato = $("bDato").value;
+  const klassifisering = $("bKlasse").value;
+  const fasit = { A: $("bA").value.trim(), B: $("bB").value.trim(), C: $("bC").value.trim() };
+  if (!dato) return melding("meldingBlending", "Velg en dato.", "feil");
+  if (!fasit.A || !fasit.B || !fasit.C) return melding("meldingBlending", "Fyll inn alle tre glassene.", "feil");
+  if (new Set([fasit.A, fasit.B, fasit.C]).size !== 3) {
+    return melding("meldingBlending", "De tre cognacene må være forskjellige.", "feil");
+  }
+  const knapp = e.target.querySelector("button");
+  knapp.disabled = true;
+  try {
+    const ny = await addDoc(collection(db, "blendinger"), {
+      dato, klassifisering, fasit, svar: {}, opprettet: serverTimestamp()
+    });
+    blendinger.unshift({ id: ny.id, dato, klassifisering, fasit, svar: {} });
+    e.target.reset();
+    e.target.hidden = true;
+    apenBlending = ny.id;
+    melding("meldingBlending", "Blendingen er lagret. Legg inn svarene under.", "ok");
+    tegnBlending();
+  } catch (err) {
+    melding("meldingBlending", feiltekst(err), "feil");
+  } finally {
+    knapp.disabled = false;
+  }
+});
+
+/* ---------- Blendinger fra den gamle poengbasen ---------- */
+let blendingArkiv = [];
+let apenArkivBlending = null;
+
+async function lastBlendingArkiv() {
+  blendingArkiv = [];
+  const treff = await getDocs(collection(db, "blendingarkiv"));
+  treff.forEach(d => blendingArkiv.push({ id: d.id, ...d.data() }));
+  blendingArkiv.sort((a, b) => (b.dato || "").localeCompare(a.dato || ""));
+}
+
+function arkivRette(s, init) {
+  const g = (s.resultat || {})[init] || {};
+  return GLASS.filter(x => g[x] === "rett").length;
+}
+
+function tegnBlendingArkiv() {
+  const boks = $("listeArkivBlending");
+  boks.textContent = "";
+  if (!blendingArkiv.length) {
+    boks.append(tomtSvar("Ingen tidligere blendinger importert."));
+  } else {
+    blendingArkiv.forEach(b => {
+      const deltakere = Object.keys(b.resultat || {});
+      const rad = radElement(
+        norskDato(b.dato) + " · " + b.klassifisering,
+        GLASS.map(g => g + ": " + b.fasit[g]).join("   ") + (b.sted ? "   " + b.sted : ""),
+        deltakere.length + " deltakere",
+        true
+      );
+      rad.classList.add("valgbar");
+      rad.addEventListener("click", () => {
+        apenArkivBlending = apenArkivBlending === b.id ? null : b.id;
+        tegnBlendingArkiv();
+      });
+      boks.append(rad);
+
+      if (apenArkivBlending === b.id) {
+        const detalj = document.createElement("div");
+        detalj.className = "detalj";
+        deltakere
+          .map(init => ({ init, rette: arkivRette(b, init) }))
+          .sort((x, y) => y.rette - x.rette || x.init.localeCompare(y.init))
+          .forEach(({ init, rette }) => {
+            const g = b.resultat[init];
+            const under = GLASS.map(x => x + " " + (g[x] === "rett" ? "✓" : "✗")).join("    ");
+            const r = radElement(arkivNavnFor(init), under, rette + "/3");
+            if (rette === 3) r.querySelector(".tall").classList.add("rett");
+            if (rette === 2) r.querySelector(".tall").classList.add("bom");
+            detalj.append(r);
+          });
+        boks.append(detalj);
+      }
+    });
+  }
+
+  tegnArkivRangering("listeArkivRangering");
+}
+
+// Treffprosent gjennom hele arkivet. Tegnes både under Arkiv og under Blending.
+function tegnArkivRangering(elId) {
+  const boks = $(elId);
+  if (!boks) return;
+  boks.textContent = "";
+
+  const sum = {};
+  blendingArkiv.forEach(b => {
+    Object.keys(b.resultat || {}).forEach(init => {
+      if (!sum[init]) sum[init] = { rette: 0, glass: 0, runder: 0 };
+      sum[init].rette += arkivRette(b, init);
+      sum[init].glass += GLASS.filter(g => b.resultat[init][g]).length;
+      sum[init].runder += 1;
+    });
+  });
+
+  const alle = Object.keys(sum);
+  if (!alle.length) {
+    boks.append(tomtSvar("Ingen treffprosent å regne ut ennå."));
+    return;
+  }
+  alle
+    .map(init => ({ init, ...sum[init], prosent: (sum[init].rette / sum[init].glass) * 100 }))
+    .sort((a, b) => b.prosent - a.prosent || b.rette - a.rette)
+    .forEach(r => {
+      boks.append(radElement(
+        arkivNavnFor(r.init),
+        r.rette + " rette av " + r.glass + " glass, " + r.runder + (r.runder === 1 ? " blending" : " blendinger"),
+        tall(r.prosent, 0) + " %"
+      ));
+    });
+}
+
+/* ---------- Treffprosent total ---------- */
+// Arkivet henger på initialer, de nye blendingene på brukerkonto.
+// Feltet «initialer» på medlemmet knytter dem sammen.
+
+function tittelFor(prosent, glass) {
+  if (!glass) return null;
+  if (prosent >= 200 / 3) return { navn: "Master blender", klasse: "master" };
+  if (prosent > 50) return { navn: "Blender", klasse: "" };
+  return null;
+}
+
+function tegnRangering() {
+  const boks = $("listeRangering");
+  if (!boks) return;
+  boks.textContent = "";
+
+  const sum = {};
+  const legg = (noekkel, navn, rette, glass, runder) => {
+    if (!sum[noekkel]) sum[noekkel] = { navn, rette: 0, glass: 0, runder: 0 };
+    if (navn) sum[noekkel].navn = navn;
+    sum[noekkel].rette += rette;
+    sum[noekkel].glass += glass;
+    sum[noekkel].runder += runder;
+  };
+
+  // Arkivet, nøklet på initialer
+  blendingArkiv.forEach(b => {
+    Object.keys(b.resultat || {}).forEach(init => {
+      const medlem = medlemmer.find(m => (m.initialer || "").toUpperCase() === init);
+      legg(init, medlem ? medlem.navn : arkivNavnFor(init),
+           arkivRette(b, init),
+           GLASS.filter(g => b.resultat[init][g]).length, 1);
+    });
+  });
+
+  // Nye blendinger, nøklet på brukerkonto – slått sammen via initialene
+  blendinger.forEach(b => {
+    Object.keys(b.svar || {}).forEach(uid => {
+      const medlem = medlemmer.find(m => m.id === uid);
+      const init = medlem && medlem.initialer ? medlem.initialer.toUpperCase() : null;
+      legg(init || "uid:" + uid, medlem ? medlem.navn : navnPa(uid), rettePoeng(b, uid), 3, 1);
+    });
+  });
+
+  const alle = Object.keys(sum);
+  if (!alle.length) {
+    boks.append(tomtSvar("Treffprosenten regnes ut så snart det ligger blendinger inne."));
+    return;
+  }
+
+  alle
+    .map(k => ({ ...sum[k], prosent: (sum[k].rette / sum[k].glass) * 100 }))
+    .sort((a, b) => b.prosent - a.prosent || b.rette - a.rette)
+    .forEach(r => {
+      const rad = radElement(
+        r.navn,
+        r.rette + " rette av " + r.glass + " glass, " + r.runder + (r.runder === 1 ? " blending" : " blendinger"),
+        tall(r.prosent, 0) + " %"
+      );
+      const tittel = tittelFor(r.prosent, r.glass);
+      if (tittel) {
+        const merke = document.createElement("span");
+        merke.className = "tittelmerke " + tittel.klasse;
+        merke.textContent = tittel.navn;
+        rad.insertBefore(merke, rad.lastChild);
+      }
+      boks.append(rad);
+    });
+}
+
+/* ---------- Klassetabellene: VS, VSOP, XO ---------- */
+function tegnKlasse(klasse) {
+  const boks = $("klasseInnhold");
+  boks.textContent = "";
+
+  if (klasse === "Cocktail") {
+    boks.append(tomtSvar("Cocktail smakes ikke som blending, så her ligger ingen karakterer ennå."));
+    return;
+  }
+
+  const rader = erJcc ? klasseTabell(klasse) : (sammendrag[klasse] || []);
+  if (!rader.length) {
+    boks.append(tomtSvar("Ingen " + klasse + " er kåret ennå. Listen fylles ut etter hvert som Jæren Cognac Club smaker seg gjennom klassen."));
+    return;
+  }
+
+  const innledning = document.createElement("p");
+  innledning.className = "hjelp";
+  innledning.textContent = erJcc
+    ? "Snittkarakter fra blendingene, høyeste først."
+    : "De tre beste i klassen, kåret av Jæren Cognac Club.";
+  boks.append(innledning);
+
+  rader.forEach(c => {
+    const under = c.antall
+      ? c.antall + (c.antall === 1 ? " karakter" : " karakterer")
+        + (c.ganger ? ", smakt " + c.ganger + (c.ganger === 1 ? " gang" : " ganger") : "")
+      : "Ingen karakterer lagt inn";
+    boks.append(radElement(c.navn, under, c.snitt === null || c.snitt === undefined ? "–" : tall(c.snitt)));
+  });
+}
+
+/* ---------- Arkiv fra den gamle poengbasen ---------- */
+// Historikken er ferdig og endres aldri. Den lever derfor ved siden av
+// blendingene, med poeng knyttet til initialene som ble brukt den gangen.
+
+let historikk = [];
+let arkivNavn = {};
+
+async function lastArkiv() {
+  historikk = [];
+  const treff = await getDocs(collection(db, "historikk"));
+  treff.forEach(d => historikk.push({ id: d.id, ...d.data() }));
+  historikk.sort((a, b) => (b.dato || "").localeCompare(a.dato || ""));
+  try {
+    const navn = await getDoc(doc(db, "arkiv", "initialer"));
+    arkivNavn = navn.exists() ? navn.data() : {};
+  } catch (_) {
+    arkivNavn = {};
+  }
+}
+
+function arkivNavnFor(init) {
+  return arkivNavn[init] ? arkivNavn[init] + " (" + init + ")" : init;
+}
+
+document.querySelectorAll(".arkivfane").forEach(b => {
+  b.addEventListener("click", () => {
+    const del = b.dataset.del;
+    $("arkivSmakinger").hidden = del !== "smakinger";
+    $("arkivBlending").hidden = del !== "blending";
+    document.querySelectorAll(".arkivfane").forEach(x => {
+      x.setAttribute("aria-current", String(x.dataset.del === del));
+    });
+    melding("meldingArkiv", "");
+    if (del === "blending") tegnBlendingArkiv();
+  });
+});
+
+function tegnArkiv() {
+  $("adminImport").hidden = !erAdmin;
+  $("adminImportBlending").hidden = !erAdmin;
+  tegnBlendingArkiv();
+  const boks = $("listeArkiv");
+  boks.textContent = "";
+
+  if (!historikk.length) {
+    boks.append(tomtSvar(erAdmin
+      ? "Ingenting importert ennå. Trykk «Importer fra poengbasen» for å legge inn historikken."
+      : "Ingenting i arkivet ennå."));
+    return;
+  }
+
+  // Samme cognac kan være smakt flere kvelder. Vi samler dem under ett navn.
+  const samlet = {};
+  historikk.forEach(h => {
+    const noekkel = h.klassifisering + " · " + h.cognac;
+    if (!samlet[noekkel]) {
+      samlet[noekkel] = { cognac: h.cognac, klassifisering: h.klassifisering, smakinger: [], poeng: [] };
+    }
+    samlet[noekkel].smakinger.push(h);
+    Object.values(h.poeng || {}).forEach(p => {
+      if (typeof p === "number") samlet[noekkel].poeng.push(p);
+    });
+  });
+
+  const rader = Object.keys(samlet).map(k => {
+    const c = samlet[k];
+    const snitt = c.poeng.length ? c.poeng.reduce((a, b) => a + b, 0) / c.poeng.length : null;
+    const sisteDato = c.smakinger.map(x => x.dato).sort().slice(-1)[0] || "";
+    return { noekkel: k, ...c, snitt, sisteDato };
+  });
+
+  rader.sort((a, b) => arkivSortering === "snitt"
+    ? (b.snitt === null ? -1 : b.snitt) - (a.snitt === null ? -1 : a.snitt)
+    : b.sisteDato.localeCompare(a.sisteDato));
+
+  rader.forEach(c => {
+    const ganger = c.smakinger.length;
+    const under = c.klassifisering + " · "
+      + (ganger === 1 ? "smakt " + norskDato(c.sisteDato) : "smakt " + ganger + " ganger, sist " + norskDato(c.sisteDato))
+      + " · " + c.poeng.length + (c.poeng.length === 1 ? " karakter" : " karakterer");
+    const rad = radElement(c.cognac, under, c.snitt === null ? "–" : tall(c.snitt));
+    rad.classList.add("valgbar");
+    rad.addEventListener("click", () => {
+      apentArkiv = apentArkiv === c.noekkel ? null : c.noekkel;
+      tegnArkiv();
+    });
+    boks.append(rad);
+
+    if (apentArkiv === c.noekkel) {
+      const detalj = document.createElement("div");
+      detalj.className = "detalj";
+      c.smakinger
+        .slice()
+        .sort((a, b) => b.dato.localeCompare(a.dato))
+        .forEach(h => {
+          const p = Object.values(h.poeng || {}).filter(x => typeof x === "number");
+          const kveldssnitt = p.length ? p.reduce((a, b) => a + b, 0) / p.length : null;
+          const overskrift = document.createElement("div");
+          overskrift.className = "rad";
+          const v = document.createElement("div");
+          v.className = "venstre";
+          const t = document.createElement("div");
+          t.className = "tittel";
+          t.textContent = norskDato(h.dato);
+          v.append(t);
+          overskrift.append(v);
+          const tallet = document.createElement("div");
+          tallet.className = "tall";
+          tallet.textContent = kveldssnitt === null ? "–" : tall(kveldssnitt);
+          overskrift.append(tallet);
+          detalj.append(overskrift);
+
+          Object.keys(h.poeng || {})
+            .sort((a, b) => h.poeng[b] - h.poeng[a])
+            .forEach(init => {
+              const r = radElement(arkivNavnFor(init), "", tall(h.poeng[init]));
+              r.style.paddingLeft = "1.2rem";
+              r.querySelector(".tall").classList.add("svak");
+              detalj.append(r);
+            });
+        });
+      boks.append(detalj);
+    }
+  });
+}
+
+let apentArkiv = null;
+let arkivSortering = "dato";
+
+document.querySelectorAll(".sortvalg").forEach(b => {
+  b.addEventListener("click", () => {
+    arkivSortering = b.dataset.sort;
+    document.querySelectorAll(".sortvalg").forEach(x => {
+      x.setAttribute("aria-current", String(x.dataset.sort === arkivSortering));
+    });
+    tegnArkiv();
+  });
+});
+
+/* ---------- Import ---------- */
+$("knappImport").addEventListener("click", () => {
+  const form = $("skjemaImport");
+  form.hidden = !form.hidden;
+});
+
+function arkivId(dato, cognac, klasse) {
+  return (dato + "-" + klasse + "-" + cognac)
+    .toLowerCase()
+    .replace(/[æ]/g, "ae").replace(/[ø]/g, "oe").replace(/[å]/g, "aa")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 120);
+}
+
+$("knappImportBlending").addEventListener("click", () => {
+  const form = $("skjemaImportBlending");
+  form.hidden = !form.hidden;
+});
+
+$("skjemaImportBlending").addEventListener("submit", (e) => importer(e, "importBlendingData"));
+$("skjemaImport").addEventListener("submit", (e) => importer(e, "importData"));
+
+async function importer(e, feltId) {
+  e.preventDefault();
+  const knapp = e.target.querySelector("button");
+  let data;
+  const tekst = $(feltId).value.trim();
+  if (!tekst) return melding("meldingArkiv", "Feltet er tomt. Lim inn innholdet fra importfilen.", "feil");
+  try {
+    data = JSON.parse(tekst);
+  } catch (err) {
+    // Vis hvor det stoppet, så feilen er til å finne igjen i teksten
+    const pos = (err.message.match(/position (\d+)/) || [])[1];
+    const rundt = pos ? " Her stopper den: … " + tekst.slice(Math.max(0, pos - 40), Number(pos) + 20) + " …" : "";
+    const slutt = tekst.slice(-1);
+    const kuttet = slutt !== "}" ? " Teksten slutter på «" + slutt + "» og ikke på }, så den ser avkuttet ut." : "";
+    return melding("meldingArkiv", "Teksten er ikke gyldig JSON." + kuttet + rundt, "feil");
+  }
+  const rader = Array.isArray(data.smakinger) ? data.smakinger : [];
+  const gamleBlendinger = Array.isArray(data.blendinger) ? data.blendinger : [];
+  if (!rader.length && !gamleBlendinger.length) {
+    return melding("meldingArkiv", "Fant verken smakinger eller blendinger i dataene.", "feil");
+  }
+
+  knapp.disabled = true;
+  melding("meldingArkiv", "Importerer …");
+  try {
+    if (data.medlemmer && typeof data.medlemmer === "object") {
+      await setDoc(doc(db, "arkiv", "initialer"), data.medlemmer, { merge: true });
+    }
+    for (const r of rader) {
+      if (!r.cognac || !r.dato || !r.klassifisering) continue;
+      await setDoc(doc(db, "historikk", arkivId(r.dato, r.cognac, r.klassifisering)), {
+        cognac: r.cognac,
+        dato: r.dato,
+        klassifisering: r.klassifisering,
+        poeng: r.poeng || {}
+      });
+    }
+    const gamle = gamleBlendinger;
+    for (const b of gamle) {
+      if (!b.dato || !b.klassifisering || !b.fasit) continue;
+      await setDoc(doc(db, "blendingarkiv", b.dato + "-" + b.klassifisering.toLowerCase()), {
+        dato: b.dato,
+        klassifisering: b.klassifisering,
+        fasit: b.fasit,
+        sted: b.sted || "",
+        resultat: b.resultat || {}
+      });
+    }
+    await lastArkiv();
+    await lastBlendingArkiv();
+    await skrivSammendrag();
+    $(feltId).value = "";
+    e.target.hidden = true;
+    melding("meldingArkiv", [
+      rader.length ? rader.length + " smakinger" : "",
+      gamle.length ? gamle.length + " blendinger" : ""
+    ].filter(Boolean).join(" og ") + " er importert.", "ok");
+    tegnArkiv();
+  } catch (err) {
+    melding("meldingArkiv", feiltekst(err), "feil");
+  } finally {
+    knapp.disabled = false;
+  }
+}
+
+/* ---------- Ruting ---------- */
+onAuthStateChanged(auth, async (bruker) => {
+  if (registrerer) return;
+  if (!bruker) { menyTilgjengelig(false); apnePanel("profil"); vis("visGjest"); return; }
+  if (!bruker.emailVerified) { menyTilgjengelig(false); visUbekreftet(bruker); return; }
+  try {
+    await tegnMedlem(bruker);
+  } catch (err) {
+    vis("visMedlem");
+    melding("meldingMedlem", feiltekst(err), "feil");
+  }
+});
+
+</script>
+</body>
+</html>
