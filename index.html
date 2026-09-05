@@ -56,7 +56,11 @@
   /* Glassene: hero og meny i ett */
   .meny{margin:2rem 0 2.25rem}
   .glassrad{display:flex;gap:.35rem;flex-wrap:wrap}
-  .menytekst{display:flex;gap:1.25rem;margin-bottom:1.25rem}
+  .verktoy{
+    display:flex;gap:1.4rem;flex-wrap:wrap;
+    padding-bottom:.85rem;margin-bottom:2rem;
+    border-bottom:1px solid var(--linje);
+  }
   .menyvalg{font:inherit;background:none;border:0;padding:0;cursor:pointer;color:var(--dempet)}
   .menyvalg:focus-visible{outline:2px solid var(--kobber);outline-offset:3px}
 
@@ -199,7 +203,7 @@
     h1{font-size:2.7rem}
     .undertittel{font-size:.95rem}
     .meny{margin:1.75rem 0 0}
-    .menytekst{flex-direction:column;align-items:flex-start;gap:.55rem;margin-bottom:1.5rem}
+    .verktoy{grid-column:1 / -1;margin-bottom:2.5rem}
     .glassrad{gap:.2rem}
     .glass{flex:0 0 3.1rem}
 
@@ -220,16 +224,17 @@
 <body>
 <div class="ramme">
 
+  <nav class="verktoy" id="verktoylinje" aria-label="Snarveier" hidden>
+    <button class="menyvalg tekstvalg" type="button" data-panel="profil" hidden>Min profil</button>
+    <button class="menyvalg tekstvalg" type="button" data-panel="medlemmer" hidden>Medlemmer</button>
+    <button class="menyvalg tekstvalg" type="button" data-panel="arkiv" hidden>Arkiv</button>
+  </nav>
+
   <header>
     <h1>Jærcognacens venner</h1>
     <p class="undertittel">Vi deler smaksprøver, opplevelser og anbefalinger. Registrer deg, så er du med med en gang.</p>
 
     <nav class="meny" id="meny" aria-label="Seksjoner">
-      <div class="menytekst">
-        <button class="menyvalg tekstvalg" type="button" data-panel="profil" hidden>Min profil</button>
-        <button class="menyvalg tekstvalg" type="button" data-panel="medlemmer" hidden>Medlemmer</button>
-        <button class="menyvalg tekstvalg" type="button" data-panel="arkiv" hidden>Arkiv</button>
-      </div>
       <div class="glassrad">
         <button class="menyvalg glass" type="button" data-panel="VS" disabled style="--niva:var(--vs);--vent:0.0s">
           <svg viewBox="0 0 24 34" aria-hidden="true">
@@ -566,6 +571,7 @@ function apnePanel(navn) {
 }
 
 function menyTilgjengelig(paa) {
+  $("verktoylinje").hidden = !paa;
   document.querySelectorAll(".menyvalg").forEach(b => {
     const personlig = ["profil", "medlemmer"].includes(b.dataset.panel);
     if (personlig) b.hidden = !paa;
