@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jærcognacens venner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sand:#FFFFFF;
+    --papir:#F2F1EA;
+    --skifer:#262A25;
+    --skifer-myk:#5A6058;
+    --fat:#9C5E17;
+    --fat-lys:#C98A3C;
+    --linje:#D2CFC3;
+    --feil:#8C2F1E;
+    --ok:#3B6B4A;
+    --maks:34rem;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    background:var(--sand);
+    color:var(--skifer);
+    font-family:"IBM Plex Sans",system-ui,sans-serif;
+    font-size:16px;
+    line-height:1.55;
+  }
+  .ramme{max-width:var(--maks);margin:0 auto;padding:2rem 1.25rem 4rem}
+
+  /* Topp */
+  .topp{padding-bottom:1.5rem;border-bottom:1px solid var(--linje);margin-bottom:2rem}
+  .merke{
+    display:block;width:100%;height:6px;
+    background:linear-gradient(90deg,var(--fat) 0%,var(--fat-lys) 45%,var(--sand) 100%);
+    margin-bottom:1.25rem;
+  }
+  h1{
+    font-family:Fraunces,Georgia,serif;
+    font-weight:600;
+    font-size:clamp(2rem,9vw,2.75rem);
+    line-height:1.05;
+    letter-spacing:-.015em;
+    margin:0 0 .5rem;
+  }
+  .undertittel{margin:0;color:var(--skifer-myk);max-width:30rem}
+  .klasser{
+    margin:1.25rem 0 0;padding:0;list-style:none;
+    display:flex;flex-wrap:wrap;gap:.4rem .5rem;
+    font-size:.8rem;color:var(--skifer-myk);
+  }
+  .klasser li{border:1px solid var(--linje);border-radius:2px;padding:.15rem .5rem}
+
+  h2{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:1.35rem;margin:0 0 .35rem}
+  h3{font-size:1rem;font-weight:600;margin:2rem 0 .5rem}
+  p{margin:0 0 1rem}
+  .hjelp{font-size:.85rem;color:var(--skifer-myk)}
+
+  /* Faner */
+  .faner{display:flex;gap:1.25rem;border-bottom:1px solid var(--linje);margin-bottom:1.5rem}
+  .fane{
+    background:none;border:0;padding:.5rem 0 .65rem;margin-bottom:-1px;
+    font:inherit;color:var(--skifer-myk);cursor:pointer;border-bottom:2px solid transparent;
+  }
+  .fane[aria-selected="true"]{color:var(--skifer);border-bottom-color:var(--fat)}
+  .fane:focus-visible{outline:2px solid var(--fat);outline-offset:3px}
+
+  /* Skjema */
+  form{margin:0}
+  .felt{margin-bottom:1rem}
+  label{display:block;font-size:.9rem;font-weight:500;margin-bottom:.3rem}
+  input{
+    width:100%;padding:.7rem .75rem;font:inherit;color:var(--skifer);
+    background:#FFFFFF;border:1px solid var(--linje);border-radius:2px;
+  }
+  input:focus{outline:2px solid var(--fat);outline-offset:1px;border-color:var(--fat)}
+  input[aria-invalid="true"]{border-color:var(--feil)}
+  .rad{display:flex;gap:.75rem}
+  .rad .felt{flex:1}
+  .knapp{
+    display:inline-block;width:100%;padding:.8rem 1rem;
+    font:inherit;font-weight:600;color:var(--papir);background:var(--skifer);
+    border:1px solid var(--skifer);border-radius:2px;cursor:pointer;
+  }
+  .knapp:hover{background:#1C1F1B}
+  .knapp:focus-visible{outline:2px solid var(--fat);outline-offset:2px}
+  .knapp[disabled]{opacity:.5;cursor:progress}
+  .knapp.liten{width:auto;padding:.4rem .7rem;font-size:.85rem;font-weight:500}
+  .knapp.stille{background:none;color:var(--skifer);border-color:var(--linje)}
+  .knapp.stille:hover{background:var(--papir)}
+  .lenkeknapp{background:none;border:0;padding:0;font:inherit;color:var(--fat);text-decoration:underline;cursor:pointer}
+
+  /* Meldinger */
+  .melding{padding:.75rem .9rem;border-left:3px solid var(--linje);background:var(--papir);margin-bottom:1.25rem;font-size:.92rem}
+  .melding.feil{border-left-color:var(--feil)}
+  .melding.ok{border-left-color:var(--ok)}
+  [hidden]{display:none !important}
+
+  /* Medlemmer */
+  .medlem{
+    display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;
+    padding:.8rem 0;border-bottom:1px solid var(--linje);
+  }
+  .medlem .navn{font-weight:500}
+  .medlem .detalj{font-size:.85rem;color:var(--skifer-myk)}
+  .medlem .handling{display:flex;gap:.4rem;flex-shrink:0}
+  .status{font-size:.75rem;padding:.1rem .45rem;border:1px solid var(--linje);border-radius:2px;white-space:nowrap}
+  .status.venter{border-color:var(--fat);color:var(--fat)}
+  .status.sluttet{color:var(--skifer-myk)}
+
+  .bunn{margin-top:3rem;padding-top:1.25rem;border-top:1px solid var(--linje);font-size:.85rem;color:var(--skifer-myk)}
+</style>
+</head>
+<body>
+<div class="ramme">
+
+  <header class="topp">
+    <span class="merke" aria-hidden="true"></span>
+    <h1>Jærcognacens venner</h1>
+    <p class="undertittel">Medlemsregisteret for klubben. Meld deg inn her, så blir du lagt til når styret har godkjent søknaden.</p>
+    <ul class="klasser">
+      <li>VS</li><li>VSOP</li><li>XO</li><li>Blending</li><li>Cocktail</li>
+    </ul>
+  </header>
+
+  <div id="oppsettmangler" class="melding feil" hidden>
+    Nettstedet er ikke koblet til Firebase ennå. Fyll inn nøklene i <code>firebase-config.js</code>.
+  </div>
+
+  <main>
+    <!-- Innlogging / registrering -->
+    <section id="visGjest" hidden>
+      <div class="faner" role="tablist">
+        <button class="fane" id="faneMedlem" role="tab" aria-selected="true" aria-controls="panelMedlem">Bli medlem</button>
+        <button class="fane" id="faneInn" role="tab" aria-selected="false" aria-controls="panelInn">Logg inn</button>
+      </div>
+
+      <div id="panelMedlem" role="tabpanel" aria-labelledby="faneMedlem">
+        <h2>Søk om medlemskap</h2>
+        <p class="hjelp">Vi bruker navn, initialer, e-post og mobilnummer til medlemslista og til innkalling til smakinger. Ingenting deles utenfor klubben.</p>
+        <div id="meldingReg" class="melding" hidden></div>
+        <form id="skjemaReg" novalidate>
+          <div class="felt">
+            <label for="regNavn">Fullt navn</label>
+            <input id="regNavn" name="navn" autocomplete="name" required>
+          </div>
+          <div class="rad">
+            <div class="felt">
+              <label for="regInit">Initialer</label>
+              <input id="regInit" name="initialer" maxlength="4" autocapitalize="characters" required>
+            </div>
+            <div class="felt">
+              <label for="regMobil">Mobil</label>
+              <input id="regMobil" name="mobil" type="tel" inputmode="tel" autocomplete="tel" placeholder="400 00 000" required>
+            </div>
+          </div>
+          <p class="hjelp" style="margin-top:-.5rem">Initialene brukes i poengbasen og må være ledige.</p>
+          <div class="felt">
+            <label for="regEpost">E-post</label>
+            <input id="regEpost" name="epost" type="email" autocomplete="email" required>
+          </div>
+          <div class="felt">
+            <label for="regPassord">Passord</label>
+            <input id="regPassord" name="passord" type="password" autocomplete="new-password" minlength="8" required>
+            <p class="hjelp">Minst 8 tegn.</p>
+          </div>
+          <button class="knapp" type="submit">Send søknad</button>
+        </form>
+      </div>
+
+      <div id="panelInn" role="tabpanel" aria-labelledby="faneInn" hidden>
+        <h2>Logg inn</h2>
+        <div id="meldingInn" class="melding" hidden></div>
+        <form id="skjemaInn" novalidate>
+          <div class="felt">
+            <label for="innEpost">E-post</label>
+            <input id="innEpost" type="email" autocomplete="email" required>
+          </div>
+          <div class="felt">
+            <label for="innPassord">Passord</label>
+            <input id="innPassord" type="password" autocomplete="current-password" required>
+          </div>
+          <button class="knapp" type="submit">Logg inn</button>
+        </form>
+        <p class="hjelp" style="margin-top:1rem">
+          Glemt passordet? <button class="lenkeknapp" id="knappNyttPassord" type="button">Send meg en lenke</button>
+        </p>
+      </div>
+    </section>
+
+    <!-- Innlogget uten profil -->
+    <section id="visFullfor" hidden>
+      <h2>Fullfør profilen</h2>
+      <p class="hjelp">Registreringen ble avbrutt før profilen var lagret. Fyll ut resten, så er søknaden inne.</p>
+      <div id="meldingFullfor" class="melding" hidden></div>
+      <form id="skjemaFullfor" novalidate>
+        <div class="felt">
+          <label for="fNavn">Fullt navn</label>
+          <input id="fNavn" autocomplete="name" required>
+        </div>
+        <div class="rad">
+          <div class="felt">
+            <label for="fInit">Initialer</label>
+            <input id="fInit" maxlength="4" autocapitalize="characters" required>
+          </div>
+          <div class="felt">
+            <label for="fMobil">Mobil</label>
+            <input id="fMobil" type="tel" inputmode="tel" autocomplete="tel" required>
+          </div>
+        </div>
+        <button class="knapp" type="submit">Lagre profil</button>
+      </form>
+    </section>
+
+    <!-- Innlogget -->
+    <section id="visMedlem" hidden>
+      <div id="meldingMedlem" class="melding" hidden></div>
+
+      <h2 id="hilsen">Min side</h2>
+      <p class="detalj" id="minInfo"></p>
+
+      <div id="ventestatus" class="melding" hidden>
+        Søknaden din ligger til godkjenning. Du får en e-post når styret har behandlet den.
+      </div>
+
+      <div id="medlemsliste" hidden>
+        <h3>Medlemmer</h3>
+        <div id="listeAktive"></div>
+      </div>
+
+      <div id="adminpanel" hidden>
+        <h3>Søknader til behandling</h3>
+        <div id="listeVenter"><p class="hjelp">Ingen søknader nå.</p></div>
+        <h3>Tidligere medlemmer</h3>
+        <div id="listeSluttet"></div>
+      </div>
+
+      <p style="margin-top:2rem"><button class="knapp stille liten" id="knappUt" type="button">Logg ut</button></p>
+    </section>
+  </main>
+
+  <footer class="bunn">
+    Spørsmål om medlemskap eller registrerte opplysninger rettes til styret. Du kan når som helst be om å bli slettet fra registeret.
+  </footer>
+</div>
+
+<script type="module">
+import { firebaseConfig } from "./firebase-config.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut,
+  onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs,
+  query, orderBy, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const $ = (id) => document.getElementById(id);
+
+/* ---------- Oppsett ---------- */
+if (!firebaseConfig.apiKey || firebaseConfig.apiKey.startsWith("DIN_")) {
+  $("oppsettmangler").hidden = false;
+  throw new Error("Firebase-konfigurasjon mangler");
+}
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ---------- Hjelpere ---------- */
+function vis(id) {
+  ["visGjest", "visFullfor", "visMedlem"].forEach(v => { $(v).hidden = (v !== id); });
+}
+function melding(id, tekst, type) {
+  const el = $(id);
+  el.textContent = tekst;
+  el.className = "melding" + (type ? " " + type : "");
+  el.hidden = !tekst;
+}
+function reisInitialer(v) {
+  return (v || "").trim().toUpperCase().replace(/[^A-ZÆØÅ]/g, "");
+}
+function reisMobil(v) {
+  return (v || "").replace(/[\s-]/g, "");
+}
+function gyldigMobil(v) {
+  return /^(\+47)?\d{8}$/.test(v);
+}
+function feiltekst(e) {
+  const k = e && e.code ? e.code : "";
+  if (k === "auth/email-already-in-use") return "E-postadressen er allerede registrert. Logg inn i stedet.";
+  if (k === "auth/invalid-email") return "E-postadressen ser ikke riktig ut.";
+  if (k === "auth/weak-password") return "Passordet må være minst 8 tegn.";
+  if (k === "auth/invalid-credential" || k === "auth/wrong-password" || k === "auth/user-not-found")
+    return "Feil e-post eller passord.";
+  if (k === "auth/too-many-requests") return "For mange forsøk. Prøv igjen om noen minutter.";
+  if (k === "permission-denied") return "Du har ikke tilgang til dette.";
+  return "Noe gikk galt: " + (e && e.message ? e.message : "ukjent feil");
+}
+
+/* ---------- Faner ---------- */
+$("faneMedlem").addEventListener("click", () => byttFane(true));
+$("faneInn").addEventListener("click", () => byttFane(false));
+function byttFane(medlem) {
+  $("faneMedlem").setAttribute("aria-selected", String(medlem));
+  $("faneInn").setAttribute("aria-selected", String(!medlem));
+  $("panelMedlem").hidden = !medlem;
+  $("panelInn").hidden = medlem;
+}
+
+/* ---------- Lagre profil + reservere initialer ---------- */
+async function lagreProfil(uid, { navn, initialer, mobil, epost }) {
+  const merke = doc(db, "initialer", initialer);
+  const finnes = await getDoc(merke);
+  if (finnes.exists() && finnes.data().uid !== uid) {
+    const feil = new Error("Initialene " + initialer + " er allerede i bruk. Velg noe annet.");
+    feil.code = "initialer-opptatt";
+    throw feil;
+  }
+  await setDoc(merke, { uid });
+  await setDoc(doc(db, "medlemmer", uid), {
+    navn, initialer, mobil, epost,
+    status: "venter",
+    rolle: "medlem",
+    blender: false,
+    gourmet: false,
+    innmeldt: serverTimestamp()
+  });
+}
+
+/* ---------- Registrering ---------- */
+$("skjemaReg").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const knapp = e.target.querySelector("button");
+  const navn = $("regNavn").value.trim();
+  const initialer = reisInitialer($("regInit").value);
+  const mobil = reisMobil($("regMobil").value);
+  const epost = $("regEpost").value.trim();
+  const passord = $("regPassord").value;
+
+  if (navn.length < 2) return melding("meldingReg", "Skriv inn fullt navn.", "feil");
+  if (initialer.length < 2) return melding("meldingReg", "Initialene må være 2–4 bokstaver.", "feil");
+  if (!gyldigMobil(mobil)) return melding("meldingReg", "Mobilnummeret må være 8 siffer.", "feil");
+  if (passord.length < 8) return melding("meldingReg", "Passordet må være minst 8 tegn.", "feil");
+
+  knapp.disabled = true;
+  melding("meldingReg", "Sender søknaden …");
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, epost, passord);
+    await lagreProfil(cred.user.uid, { navn, initialer, mobil, epost });
+    try { await sendEmailVerification(cred.user); } catch (_) {}
+    melding("meldingReg", "", "");
+  } catch (err) {
+    melding("meldingReg", feiltekst(err), "feil");
+  } finally {
+    knapp.disabled = false;
+  }
+});
+
+/* ---------- Fullfør profil ---------- */
+$("skjemaFullfor").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const bruker = auth.currentUser;
+  if (!bruker) return;
+  const navn = $("fNavn").value.trim();
+  const initialer = reisInitialer($("fInit").value);
+  const mobil = reisMobil($("fMobil").value);
+  if (navn.length < 2) return melding("meldingFullfor", "Skriv inn fullt navn.", "feil");
+  if (initialer.length < 2) return melding("meldingFullfor", "Initialene må være 2–4 bokstaver.", "feil");
+  if (!gyldigMobil(mobil)) return melding("meldingFullfor", "Mobilnummeret må være 8 siffer.", "feil");
+  try {
+    await lagreProfil(bruker.uid, { navn, initialer, mobil, epost: bruker.email });
+    await tegnMedlem(bruker);
+  } catch (err) {
+    melding("meldingFullfor", feiltekst(err), "feil");
+  }
+});
+
+/* ---------- Innlogging ---------- */
+$("skjemaInn").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  melding("meldingInn", "");
+  try {
+    await signInWithEmailAndPassword(auth, $("innEpost").value.trim(), $("innPassord").value);
+  } catch (err) {
+    melding("meldingInn", feiltekst(err), "feil");
+  }
+});
+
+$("knappNyttPassord").addEventListener("click", async () => {
+  const epost = $("innEpost").value.trim();
+  if (!epost) return melding("meldingInn", "Skriv inn e-postadressen din først.", "feil");
+  try {
+    await sendPasswordResetEmail(auth, epost);
+    melding("meldingInn", "Sjekk innboksen – vi har sendt deg en lenke for nytt passord.", "ok");
+  } catch (err) {
+    melding("meldingInn", feiltekst(err), "feil");
+  }
+});
+
+$("knappUt").addEventListener("click", () => signOut(auth));
+
+/* ---------- Medlemssiden ---------- */
+function kort(m, admin) {
+  const rad = document.createElement("div");
+  rad.className = "medlem";
+
+  const venstre = document.createElement("div");
+  const navn = document.createElement("div");
+  navn.className = "navn";
+  navn.textContent = m.navn + " (" + m.initialer + ")";
+  const detalj = document.createElement("div");
+  detalj.className = "detalj";
+  detalj.textContent = [m.mobil, m.epost].filter(Boolean).join(" · ");
+  venstre.append(navn, detalj);
+
+  const hoyre = document.createElement("div");
+  hoyre.className = "handling";
+  if (m.status !== "aktiv") {
+    const merke = document.createElement("span");
+    merke.className = "status " + m.status;
+    merke.textContent = m.status === "venter" ? "Til godkjenning" : "Sluttet";
+    hoyre.append(merke);
+  }
+  if (admin) {
+    if (m.status === "venter") hoyre.append(handlingsknapp("Godkjenn", m.id, "aktiv"));
+    if (m.status === "aktiv") hoyre.append(handlingsknapp("Sett sluttet", m.id, "sluttet"));
+    if (m.status === "sluttet") hoyre.append(handlingsknapp("Aktiver", m.id, "aktiv"));
+  }
+  rad.append(venstre, hoyre);
+  return rad;
+}
+
+function handlingsknapp(tekst, uid, nyStatus) {
+  const b = document.createElement("button");
+  b.className = "knapp liten" + (nyStatus === "aktiv" ? "" : " stille");
+  b.textContent = tekst;
+  b.addEventListener("click", async () => {
+    b.disabled = true;
+    try {
+      await updateDoc(doc(db, "medlemmer", uid), { status: nyStatus });
+      await tegnMedlem(auth.currentUser);
+    } catch (err) {
+      melding("meldingMedlem", feiltekst(err), "feil");
+      b.disabled = false;
+    }
+  });
+  return b;
+}
+
+async function tegnMedlem(bruker) {
+  const snap = await getDoc(doc(db, "medlemmer", bruker.uid));
+  if (!snap.exists()) { vis("visFullfor"); return; }
+  const meg = snap.data();
+  const admin = meg.rolle === "admin";
+
+  vis("visMedlem");
+  $("hilsen").textContent = "Hei, " + meg.navn.split(" ")[0];
+  $("minInfo").textContent = meg.initialer + " · " + meg.mobil + " · " + meg.epost;
+  $("ventestatus").hidden = meg.status !== "venter";
+  $("medlemsliste").hidden = meg.status !== "aktiv";
+  $("adminpanel").hidden = !admin;
+
+  if (meg.status !== "aktiv") return;
+
+  const alle = [];
+  const q = query(collection(db, "medlemmer"), orderBy("navn"));
+  (await getDocs(q)).forEach(d => alle.push({ id: d.id, ...d.data() }));
+
+  const tegnListe = (elId, filter, tomtekst) => {
+    const boks = $(elId);
+    boks.textContent = "";
+    const utvalg = alle.filter(filter);
+    if (!utvalg.length) {
+      const p = document.createElement("p");
+      p.className = "hjelp";
+      p.textContent = tomtekst;
+      boks.append(p);
+      return;
+    }
+    utvalg.forEach(m => boks.append(kort(m, admin)));
+  };
+
+  tegnListe("listeAktive", m => m.status === "aktiv", "Ingen aktive medlemmer ennå.");
+  if (admin) {
+    tegnListe("listeVenter", m => m.status === "venter", "Ingen søknader nå.");
+    tegnListe("listeSluttet", m => m.status === "sluttet", "Ingen registrert som sluttet.");
+  }
+}
+
+/* ---------- Ruting ---------- */
+onAuthStateChanged(auth, async (bruker) => {
+  if (!bruker) { vis("visGjest"); return; }
+  try {
+    await tegnMedlem(bruker);
+  } catch (err) {
+    vis("visMedlem");
+    melding("meldingMedlem", feiltekst(err), "feil");
+  }
+});
+</script>
+</body>
+</html>
