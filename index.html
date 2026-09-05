@@ -196,6 +196,19 @@
       </div>
     </section>
 
+    <!-- Innlogget, men e-posten er ikke bekreftet -->
+    <section id="visUbekreftet" hidden>
+      <h2>Bekreft e-postadressen</h2>
+      <p>Vi har sendt en lenke til <strong id="ubekreftetEpost"></strong>. Klikk på lenken i e-posten, og kom så tilbake hit.</p>
+      <p class="hjelp">Finner du den ikke, se i søppelpost. Avsenderen er Jærcognacens venner.</p>
+      <div id="meldingUbekreftet" class="melding" hidden></div>
+      <button class="knapp" id="knappSjekkIgjen" type="button">Jeg har bekreftet</button>
+      <p style="margin-top:1rem;display:flex;gap:.5rem">
+        <button class="knapp stille liten" id="knappSendPaNytt" type="button">Send lenken på nytt</button>
+        <button class="knapp stille liten" id="knappUtUbekreftet" type="button">Logg ut</button>
+      </p>
+    </section>
+
     <!-- Innlogget uten profil -->
     <section id="visFullfor" hidden>
       <h2>Fullfør profilen</h2>
@@ -220,11 +233,6 @@
 
       <h2 id="hilsen">Min side</h2>
       <p class="detalj" id="minInfo"></p>
-
-      <div id="epostubekreftet" class="melding" hidden>
-        <p style="margin:0 0 .6rem">Vi har sendt en bekreftelseslenke til e-postadressen din. Klikk på den for å bekrefte at adressen er din.</p>
-        <button class="knapp stille liten" id="knappSendPaNytt" type="button">Send lenken på nytt</button>
-      </div>
 
       <div id="medlemsliste" hidden>
         <h3 id="tittelMedlemmer">Medlemmer</h3>
@@ -274,7 +282,7 @@ let registrerer = false;
 
 /* ---------- Hjelpere ---------- */
 function vis(id) {
-  ["visGjest", "visFullfor", "visMedlem"].forEach(v => { $(v).hidden = (v !== id); });
+  ["visGjest", "visUbekreftet", "visFullfor", "visMedlem"].forEach(v => { $(v).hidden = (v !== id); });
 }
 function melding(id, tekst, type) {
   const el = $(id);
@@ -348,7 +356,7 @@ $("skjemaReg").addEventListener("submit", async (e) => {
     try { await sendEmailVerification(cred.user); } catch (_) {}
     registrerer = false;
     melding("meldingReg", "", "");
-    await tegnMedlem(cred.user);
+    visUbekreftet(cred.user);
   } catch (err) {
     registrerer = false;
     if (auth.currentUser) {
@@ -405,6 +413,31 @@ $("knappNyttPassord").addEventListener("click", async () => {
 });
 
 $("knappUt").addEventListener("click", () => signOut(auth));
+$("knappUtUbekreftet").addEventListener("click", () => signOut(auth));
+
+function visUbekreftet(bruker) {
+  $("ubekreftetEpost").textContent = bruker.email;
+  melding("meldingUbekreftet", "");
+  vis("visUbekreftet");
+}
+
+$("knappSjekkIgjen").addEventListener("click", async (e) => {
+  const knapp = e.currentTarget;
+  if (!auth.currentUser) return;
+  knapp.disabled = true;
+  try {
+    await auth.currentUser.reload();
+    if (auth.currentUser.emailVerified) {
+      await tegnMedlem(auth.currentUser);
+    } else {
+      melding("meldingUbekreftet", "Adressen er ikke bekreftet ennå. Åpne e-posten og klikk på lenken.", "feil");
+    }
+  } catch (err) {
+    melding("meldingUbekreftet", feiltekst(err), "feil");
+  } finally {
+    knapp.disabled = false;
+  }
+});
 
 $("knappSendPaNytt").addEventListener("click", async (e) => {
   const knapp = e.currentTarget;
@@ -412,9 +445,9 @@ $("knappSendPaNytt").addEventListener("click", async (e) => {
   knapp.disabled = true;
   try {
     await sendEmailVerification(auth.currentUser);
-    melding("meldingMedlem", "Lenken er sendt på nytt. Sjekk innboksen, og eventuelt søppelpost.", "ok");
+    melding("meldingUbekreftet", "Lenken er sendt på nytt. Sjekk innboksen, og eventuelt søppelpost.", "ok");
   } catch (err) {
-    melding("meldingMedlem", feiltekst(err), "feil");
+    melding("meldingUbekreftet", feiltekst(err), "feil");
   } finally {
     knapp.disabled = false;
   }
@@ -502,8 +535,6 @@ async function tegnMedlem(bruker) {
   const admin = meg.rolle === "admin";
 
   vis("visMedlem");
-  try { await bruker.reload(); } catch (_) {}
-  $("epostubekreftet").hidden = auth.currentUser ? auth.currentUser.emailVerified : true;
   $("hilsen").textContent = "Hei, " + meg.navn.split(" ")[0];
   $("minInfo").textContent = penMobil(meg.mobil) + " · " + meg.epost;
   $("medlemsliste").hidden = meg.status !== "aktiv";
@@ -541,6 +572,7 @@ async function tegnMedlem(bruker) {
 onAuthStateChanged(auth, async (bruker) => {
   if (registrerer) return;
   if (!bruker) { vis("visGjest"); return; }
+  if (!bruker.emailVerified) { visUbekreftet(bruker); return; }
   try {
     await tegnMedlem(bruker);
   } catch (err) {
