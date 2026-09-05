@@ -271,6 +271,10 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// Settes mens registreringen pågår, slik at ruteren ikke bytter visning
+// før profilen faktisk er skrevet til Firestore.
+let registrerer = false;
+
 /* ---------- Hjelpere ---------- */
 function vis(id) {
   ["visGjest", "visFullfor", "visMedlem"].forEach(v => { $(v).hidden = (v !== id); });
@@ -348,14 +352,27 @@ $("skjemaReg").addEventListener("submit", async (e) => {
   if (passord.length < 8) return melding("meldingReg", "Passordet må være minst 8 tegn.", "feil");
 
   knapp.disabled = true;
+  registrerer = true;
   melding("meldingReg", "Sender søknaden …");
   try {
     const cred = await createUserWithEmailAndPassword(auth, epost, passord);
     await lagreProfil(cred.user.uid, { navn, initialer, mobil, epost });
     try { await sendEmailVerification(cred.user); } catch (_) {}
+    registrerer = false;
     melding("meldingReg", "", "");
+    await tegnMedlem(cred.user);
   } catch (err) {
-    melding("meldingReg", feiltekst(err), "feil");
+    registrerer = false;
+    if (auth.currentUser) {
+      // Kontoen ble opprettet, men profilen ble ikke lagret.
+      $("fNavn").value = navn;
+      $("fInit").value = initialer;
+      $("fMobil").value = mobil;
+      vis("visFullfor");
+      melding("meldingFullfor", feiltekst(err), "feil");
+    } else {
+      melding("meldingReg", feiltekst(err), "feil");
+    }
   } finally {
     knapp.disabled = false;
   }
@@ -494,6 +511,7 @@ async function tegnMedlem(bruker) {
 
 /* ---------- Ruting ---------- */
 onAuthStateChanged(auth, async (bruker) => {
+  if (registrerer) return;
   if (!bruker) { vis("visGjest"); return; }
   try {
     await tegnMedlem(bruker);
