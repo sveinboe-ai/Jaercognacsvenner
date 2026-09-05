@@ -1347,38 +1347,75 @@ function tegnArkiv() {
     return;
   }
 
-  const snittFor = h => {
-    const p = Object.values(h.poeng || {}).filter(x => typeof x === "number");
-    return p.length ? p.reduce((a, b) => a + b, 0) / p.length : -1;
-  };
+  // Samme cognac kan være smakt flere kvelder. Vi samler dem under ett navn.
+  const samlet = {};
+  historikk.forEach(h => {
+    const noekkel = h.klassifisering + " · " + h.cognac;
+    if (!samlet[noekkel]) {
+      samlet[noekkel] = { cognac: h.cognac, klassifisering: h.klassifisering, smakinger: [], poeng: [] };
+    }
+    samlet[noekkel].smakinger.push(h);
+    Object.values(h.poeng || {}).forEach(p => {
+      if (typeof p === "number") samlet[noekkel].poeng.push(p);
+    });
+  });
 
-  const sortert = historikk.slice().sort((a, b) => arkivSortering === "snitt"
-    ? snittFor(b) - snittFor(a)
-    : (b.dato || "").localeCompare(a.dato || ""));
+  const rader = Object.keys(samlet).map(k => {
+    const c = samlet[k];
+    const snitt = c.poeng.length ? c.poeng.reduce((a, b) => a + b, 0) / c.poeng.length : null;
+    const sisteDato = c.smakinger.map(x => x.dato).sort().slice(-1)[0] || "";
+    return { noekkel: k, ...c, snitt, sisteDato };
+  });
 
-  sortert.forEach(h => {
-    const poeng = Object.values(h.poeng || {}).filter(x => typeof x === "number");
-    const snitt = poeng.length ? poeng.reduce((a, b) => a + b, 0) / poeng.length : null;
-    const rad = radElement(
-      h.cognac,
-      norskDato(h.dato) + " · " + h.klassifisering + " · "
-        + poeng.length + (poeng.length === 1 ? " karakter" : " karakterer"),
-      snitt === null ? "–" : tall(snitt)
-    );
+  rader.sort((a, b) => arkivSortering === "snitt"
+    ? (b.snitt === null ? -1 : b.snitt) - (a.snitt === null ? -1 : a.snitt)
+    : b.sisteDato.localeCompare(a.sisteDato));
+
+  rader.forEach(c => {
+    const ganger = c.smakinger.length;
+    const under = c.klassifisering + " · "
+      + (ganger === 1 ? "smakt " + norskDato(c.sisteDato) : "smakt " + ganger + " ganger, sist " + norskDato(c.sisteDato))
+      + " · " + c.poeng.length + (c.poeng.length === 1 ? " karakter" : " karakterer");
+    const rad = radElement(c.cognac, under, c.snitt === null ? "–" : tall(c.snitt));
     rad.classList.add("valgbar");
     rad.addEventListener("click", () => {
-      apentArkiv = apentArkiv === h.id ? null : h.id;
+      apentArkiv = apentArkiv === c.noekkel ? null : c.noekkel;
       tegnArkiv();
     });
     boks.append(rad);
 
-    if (apentArkiv === h.id) {
+    if (apentArkiv === c.noekkel) {
       const detalj = document.createElement("div");
       detalj.className = "detalj";
-      Object.keys(h.poeng || {})
-        .sort((a, b) => h.poeng[b] - h.poeng[a])
-        .forEach(init => {
-          detalj.append(radElement(arkivNavnFor(init), "", tall(h.poeng[init])));
+      c.smakinger
+        .slice()
+        .sort((a, b) => b.dato.localeCompare(a.dato))
+        .forEach(h => {
+          const p = Object.values(h.poeng || {}).filter(x => typeof x === "number");
+          const kveldssnitt = p.length ? p.reduce((a, b) => a + b, 0) / p.length : null;
+          const overskrift = document.createElement("div");
+          overskrift.className = "rad";
+          const v = document.createElement("div");
+          v.className = "venstre";
+          const t = document.createElement("div");
+          t.className = "tittel";
+          t.textContent = norskDato(h.dato);
+          v.append(t);
+          overskrift.append(v);
+          const tallet = document.createElement("div");
+          tallet.className = "tall";
+          tallet.textContent = kveldssnitt === null ? "–" : tall(kveldssnitt);
+          overskrift.append(tallet);
+          detalj.append(overskrift);
+
+          Object.keys(h.poeng || {})
+            .sort((a, b) => h.poeng[b] - h.poeng[a])
+            .forEach(init => {
+              const r = radElement(arkivNavnFor(init), "", tall(h.poeng[init]));
+              r.style.paddingLeft = "1.2rem";
+              r.querySelector(".tall").classList.add("svak");
+              detalj.append(r);
+            });
         });
       boks.append(detalj);
     }
@@ -1417,10 +1454,17 @@ $("skjemaImport").addEventListener("submit", async (e) => {
   e.preventDefault();
   const knapp = e.target.querySelector("button");
   let data;
+  const tekst = $("importData").value.trim();
+  if (!tekst) return melding("meldingArkiv", "Feltet er tomt. Lim inn innholdet fra importfilen.", "feil");
   try {
-    data = JSON.parse($("importData").value);
-  } catch (_) {
-    return melding("meldingArkiv", "Teksten er ikke gyldig JSON. Sjekk at klammer og komma står riktig.", "feil");
+    data = JSON.parse(tekst);
+  } catch (err) {
+    // Vis hvor det stoppet, så feilen er til å finne igjen i teksten
+    const pos = (err.message.match(/position (\d+)/) || [])[1];
+    const rundt = pos ? " Her stopper den: … " + tekst.slice(Math.max(0, pos - 40), Number(pos) + 20) + " …" : "";
+    const slutt = tekst.slice(-1);
+    const kuttet = slutt !== "}" ? " Teksten slutter på «" + slutt + "» og ikke på }, så den ser avkuttet ut." : "";
+    return melding("meldingArkiv", "Teksten er ikke gyldig JSON." + kuttet + rundt, "feil");
   }
   const rader = Array.isArray(data.smakinger) ? data.smakinger : [];
   if (!rader.length) return melding("meldingArkiv", "Fant ingen smakinger i dataene.", "feil");
