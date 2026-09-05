@@ -119,7 +119,7 @@
   .velkomst{margin:1.5rem 0 1.75rem;padding-top:1.4rem;border-top:1px solid var(--linje);max-width:32rem}
 
   /* Medlemmer */
-  .medlem{display:flex;align-items:center;gap:.9rem;padding:.85rem 0;border-bottom:1px solid var(--linje)}
+  .medlem{display:flex;flex-wrap:wrap;align-items:center;gap:.9rem;padding:.85rem 0;border-bottom:1px solid var(--linje)}
   .medlem:last-child{border-bottom:0}
   .init{
     flex-shrink:0;width:2.6rem;height:2.6rem;border-radius:50%;
@@ -172,6 +172,33 @@
 
   .bunn{margin-top:3.5rem;padding-top:1.25rem;border-top:1px solid var(--linje);
     font-size:.85rem;color:var(--dempet);max-width:30rem}
+
+  /* Brede skjermer: overskrift og meny til venstre, innholdet ved siden av */
+  @media (min-width:62rem){
+    .ramme{
+      max-width:66rem;padding:3.5rem 2rem 5rem 2.5rem;
+      display:grid;grid-template-columns:17rem minmax(0,1fr);
+      column-gap:4rem;align-items:start;
+    }
+    header{position:sticky;top:3.5rem}
+    main{min-width:0}
+    .bunn{grid-column:1 / -1;margin-top:4rem}
+
+    h1{font-size:2.7rem}
+    .undertittel{font-size:.95rem}
+    .meny{margin:1.75rem 0 0}
+    .menytekst{flex-direction:column;align-items:flex-start;gap:.55rem;margin-bottom:1.5rem}
+    .glassrad{gap:.2rem}
+    .glass{flex:0 0 3.1rem}
+
+    /* Løpende tekst holdes lesbar selv om spalten er bred */
+    .undertittel,.velkomst,.framgang,.hjelp,.bunn{max-width:34rem}
+    form{max-width:30rem}
+
+    /* Medlemslista tåler to spalter når det er plass */
+    #listeAktive{display:grid;grid-template-columns:1fr 1fr;column-gap:3rem}
+    #listeAktive .medlem:nth-last-child(2):nth-child(odd){border-bottom:0}
+  }
 
   @media (prefers-reduced-motion:reduce){
     .veske{animation:none}
