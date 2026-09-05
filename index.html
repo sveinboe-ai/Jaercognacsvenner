@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.14 – 5. september 2026 -->
+     Versjon 1.16 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -552,7 +552,7 @@
 
   <footer class="bunn">
     Spørsmål om medlemskap eller registrerte opplysninger rettes til admin. Du kan når som helst be om å bli slettet fra registeret.
-    <span class="versjon">Versjon 1.14</span>
+    <span class="versjon">Versjon 1.16</span>
   </footer>
 </div>
 
@@ -1846,23 +1846,19 @@ document.querySelectorAll(".sortvalg").forEach(b => {
 
 /* ---------- Ansiennitet ---------- */
 // Regnes fram til i dag, så tallet stiger av seg selv ved hvert årsskifte.
+// Klubbåret ruller 1. august. Startet man i 2006, står det 20 år
+// fra 1. august 2026 og fram til 1. august 2027.
+function klubbAr() {
+  const n = new Date();
+  return n.getMonth() >= 7 ? n.getFullYear() : n.getFullYear() - 1;
+}
+
 function arSiden(iso) {
-  const start = new Date(iso);
-  const naa = new Date();
-  let ar = naa.getFullYear() - start.getFullYear();
-  const passert = naa.getMonth() > start.getMonth()
-    || (naa.getMonth() === start.getMonth() && naa.getDate() >= start.getDate());
-  if (!passert) ar -= 1;
-  return Math.max(ar, 0);
+  return Math.max(klubbAr() - Number(String(iso).slice(0, 4)), 0);
 }
 
 function arMellom(fra, til) {
-  const a = new Date(fra), b = new Date(til);
-  let ar = b.getFullYear() - a.getFullYear();
-  const passert = b.getMonth() > a.getMonth()
-    || (b.getMonth() === a.getMonth() && b.getDate() >= a.getDate());
-  if (!passert) ar -= 1;
-  return Math.max(ar, 0);
+  return Math.max(Number(String(til).slice(0, 4)) - Number(String(fra).slice(0, 4)), 0);
 }
 
 function tegnAnsiennitet() {
