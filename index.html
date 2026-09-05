@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.19 – 5. september 2026 -->
+     Versjon 1.20 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -216,25 +216,21 @@
     font-size:.85rem;color:var(--dempet);max-width:30rem}
 
   /* Brede skjermer: overskrift og meny til venstre, innholdet ved siden av */
+  /* Brede skjermer: alt i én spalte – meny, tittel, klasser, så innholdet */
   @media (min-width:62rem){
-    .ramme{
-      max-width:66rem;padding:3.5rem 2rem 5rem 2.5rem;
-      display:grid;grid-template-columns:17rem minmax(0,1fr);
-      column-gap:4rem;align-items:start;
-    }
-    header{position:sticky;top:3.5rem}
-    main{min-width:0}
-    .bunn{grid-column:1 / -1;margin-top:4rem}
+    .ramme{max-width:56rem;padding:3rem 2rem 5rem 2.5rem}
 
-    h1{font-size:2.7rem}
-    .undertittel{font-size:.95rem}
-    .meny{margin:1.75rem 0 0}
-    .verktoy{grid-column:1 / -1;margin-bottom:2.5rem}
-    .glassrad{gap:.2rem}
-    .glass{flex:0 0 3.1rem}
+    h1{font-size:3rem}
+    .undertittel{font-size:1rem}
+    .verktoy{margin-bottom:2.25rem}
+    header{margin-bottom:.5rem}
+
+    .meny{margin:2rem 0 2.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--linje)}
+    .glassrad{gap:.5rem;max-width:34rem}
+    .glass{flex:1 1 4rem}
 
     /* Løpende tekst holdes lesbar selv om spalten er bred */
-    .undertittel,.velkomst,.framgang,.hjelp,.bunn{max-width:34rem}
+    .undertittel,.velkomst,.framgang,.hjelp,.bunn{max-width:36rem}
     form{max-width:30rem}
 
     /* Medlemslista tåler to spalter når det er plass */
@@ -553,7 +549,7 @@
 
   <footer class="bunn">
     Spørsmål om medlemskap eller registrerte opplysninger rettes til admin. Du kan når som helst be om å bli slettet fra registeret.
-    <span class="versjon">Versjon 1.19</span>
+    <span class="versjon">Versjon 1.20</span>
   </footer>
 </div>
 
