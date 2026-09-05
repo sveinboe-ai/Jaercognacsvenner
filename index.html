@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.12 – 5. september 2026 -->
+     Versjon 1.13 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -551,7 +551,7 @@
 
   <footer class="bunn">
     Spørsmål om medlemskap eller registrerte opplysninger rettes til admin. Du kan når som helst be om å bli slettet fra registeret.
-    <span class="versjon">Versjon 1.12</span>
+    <span class="versjon">Versjon 1.13</span>
   </footer>
 </div>
 
@@ -1883,32 +1883,28 @@ function tegnAnsiennitet() {
     return;
   }
 
-  const rader = alle.map(init => {
-    const oppgitt = arkivStart[init];
-    const dato = oppgitt || funnet[init];
-    const slutt = arkivSlutt[init] || null;
-    return {
-      init, dato, slutt, oppgitt: Boolean(oppgitt),
-      ar: slutt ? arMellom(dato, slutt) : arSiden(dato)
-    };
-  }).sort((a, b) => (a.dato || "").localeCompare(b.dato || ""));
+  // De som har sluttet står ikke på ansiennitetslista
+  const rader = alle
+    .filter(init => !arkivSlutt[init])
+    .map(init => {
+      const oppgitt = arkivStart[init];
+      const dato = oppgitt || funnet[init];
+      return { init, dato, oppgitt: Boolean(oppgitt), ar: arSiden(dato) };
+    })
+    .sort((a, b) => (a.dato || "").localeCompare(b.dato || ""));
 
-  const skriv = (utvalg, overskrift) => {
-    if (!utvalg.length) return;
-    const h = document.createElement("h3");
-    h.textContent = overskrift;
-    h.style.marginTop = boks.children.length ? "2.5rem" : "0";
-    boks.append(h);
-    utvalg.forEach(r => {
-      const under = r.slutt
-        ? "Medlem " + norskDato(r.dato) + " til " + norskDato(r.slutt)
-        : (r.oppgitt ? "Medlem siden " : "Første registrering ") + norskDato(r.dato);
-      boks.append(settUtnevnte(radElement(arkivNavnFor(r.init), under, r.ar + " år"), r.init));
-    });
-  };
+  if (!rader.length) {
+    boks.append(tomtSvar("Ingen aktive medlemmer å regne ansiennitet av."));
+    return;
+  }
 
-  skriv(rader.filter(r => !r.slutt), "Aktive");
-  skriv(rader.filter(r => r.slutt), "Tidligere medlemmer");
+  rader.forEach(r => {
+    boks.append(settUtnevnte(radElement(
+      arkivNavnFor(r.init),
+      (r.oppgitt ? "Medlem siden " : "Første registrering ") + norskDato(r.dato),
+      r.ar + " år"
+    ), r.init));
+  });
 }
 
 /* ---------- Import ---------- */
