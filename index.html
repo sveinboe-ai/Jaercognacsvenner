@@ -416,7 +416,7 @@ import {
   onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, collection, getDocs,
+  getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, collection, getDocs,
   query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -884,6 +884,7 @@ function blendingDetalj(b) {
 
   if (erAdmin) {
     boks.append(svarSkjema(b, null));
+    boks.append(slettKnapp(b));
   } else if (!(b.svar || {})[minUid]) {
     boks.append(svarSkjema(b, minUid));
   } else {
@@ -1011,6 +1012,37 @@ function svarSkjema(b, fastUid) {
   });
 
   return form;
+}
+
+function slettKnapp(b) {
+  const rad = document.createElement("p");
+  rad.style.margin = "2rem 0 0";
+  const knapp = document.createElement("button");
+  knapp.className = "knapp stille liten";
+  knapp.type = "button";
+  knapp.textContent = "Slett denne blendingen";
+  knapp.addEventListener("click", async () => {
+    const antall = Object.keys(b.svar || {}).length;
+    const sikker = window.confirm(
+      "Slette blendingen fra " + norskDato(b.dato) + "?" +
+      (antall ? " " + antall + " svar blir borte, og karakterene forsvinner fra " + b.klassifisering + "-tabellen." : "") +
+      " Dette kan ikke angres."
+    );
+    if (!sikker) return;
+    knapp.disabled = true;
+    try {
+      await deleteDoc(doc(db, "blendinger", b.id));
+      blendinger = blendinger.filter(x => x.id !== b.id);
+      apenBlending = null;
+      melding("meldingBlending", "Blendingen er slettet.", "ok");
+      tegnBlending();
+    } catch (err) {
+      melding("meldingBlending", feiltekst(err), "feil");
+      knapp.disabled = false;
+    }
+  });
+  rad.append(knapp);
+  return rad;
 }
 
 /* ---------- Ny blending ---------- */
