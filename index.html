@@ -102,15 +102,26 @@
 
   /* Medlemmer */
   .medlem{
-    display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;
-    padding:.8rem 0;border-bottom:1px solid var(--linje);
+    display:flex;align-items:flex-start;gap:.8rem;flex-wrap:wrap;
+    padding:.9rem 0;border-bottom:1px solid var(--linje);
   }
-  .medlem .navn{font-weight:500}
-  .medlem .detalj{font-size:.85rem;color:var(--skifer-myk)}
-  .medlem .handling{display:flex;gap:.4rem;flex-shrink:0}
+  .init{
+    flex-shrink:0;width:2.5rem;height:2.5rem;
+    display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--linje);border-radius:2px;
+    font-size:.8rem;font-weight:600;color:var(--fat);
+  }
+  .medlem .info{flex:1 1 12rem;min-width:0}
+  .medlem .navn{font-weight:500;line-height:1.3}
+  .kontakt{display:flex;flex-direction:column;margin-top:.15rem;font-size:.9rem}
+  .kontakt a{color:var(--skifer-myk);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .kontakt a:hover{color:var(--fat);text-decoration:underline}
+  .kontakt .mobil{font-variant-numeric:tabular-nums;letter-spacing:.02em}
+  .medlem .handling{display:flex;align-items:center;gap:.4rem;flex-shrink:0;margin-left:auto}
   .status{font-size:.75rem;padding:.1rem .45rem;border:1px solid var(--linje);border-radius:2px;white-space:nowrap}
   .status.venter{border-color:var(--fat);color:var(--fat)}
   .status.sluttet{color:var(--skifer-myk)}
+  .antall{font-weight:400;color:var(--skifer-myk)}
 
   .bunn{margin-top:3rem;padding-top:1.25rem;border-top:1px solid var(--linje);font-size:.85rem;color:var(--skifer-myk)}
 </style>
@@ -121,7 +132,7 @@
   <header class="topp">
     <span class="merke" aria-hidden="true"></span>
     <h1>Jærcognacens venner</h1>
-    <p class="undertittel">Medlemsregisteret for klubben. Meld deg inn her, så blir du lagt til når styret har godkjent søknaden.</p>
+    <p class="undertittel">Medlemsregisteret for venner av cognac på Jæren. Registrer deg her, så er du med med en gang.</p>
     <ul class="klasser">
       <li>VS</li><li>VSOP</li><li>XO</li><li>Blending</li><li>Cocktail</li>
     </ul>
@@ -140,25 +151,18 @@
       </div>
 
       <div id="panelMedlem" role="tabpanel" aria-labelledby="faneMedlem">
-        <h2>Søk om medlemskap</h2>
-        <p class="hjelp">Vi bruker navn, initialer, e-post og mobilnummer til medlemslista og til innkalling til smakinger. Ingenting deles utenfor klubben.</p>
+        <h2>Bli medlem</h2>
+        <p class="hjelp">Vi bruker navn, e-post og mobilnummer til medlemslista og til innkalling til samlinger. Ingenting deles utenfor foreningen.</p>
         <div id="meldingReg" class="melding" hidden></div>
         <form id="skjemaReg" novalidate>
           <div class="felt">
             <label for="regNavn">Fullt navn</label>
             <input id="regNavn" name="navn" autocomplete="name" required>
           </div>
-          <div class="rad">
-            <div class="felt">
-              <label for="regInit">Initialer</label>
-              <input id="regInit" name="initialer" maxlength="4" autocapitalize="characters" required>
-            </div>
-            <div class="felt">
-              <label for="regMobil">Mobil</label>
-              <input id="regMobil" name="mobil" type="tel" inputmode="tel" autocomplete="tel" placeholder="400 00 000" required>
-            </div>
+          <div class="felt">
+            <label for="regMobil">Mobil</label>
+            <input id="regMobil" name="mobil" type="tel" inputmode="tel" autocomplete="tel" placeholder="400 00 000" required>
           </div>
-          <p class="hjelp" style="margin-top:-.5rem">Initialene brukes i poengbasen og må være ledige.</p>
           <div class="felt">
             <label for="regEpost">E-post</label>
             <input id="regEpost" name="epost" type="email" autocomplete="email" required>
@@ -168,7 +172,7 @@
             <input id="regPassord" name="passord" type="password" autocomplete="new-password" minlength="8" required>
             <p class="hjelp">Minst 8 tegn.</p>
           </div>
-          <button class="knapp" type="submit">Send søknad</button>
+          <button class="knapp" type="submit">Registrer meg</button>
         </form>
       </div>
 
@@ -195,22 +199,16 @@
     <!-- Innlogget uten profil -->
     <section id="visFullfor" hidden>
       <h2>Fullfør profilen</h2>
-      <p class="hjelp">Registreringen ble avbrutt før profilen var lagret. Fyll ut resten, så er søknaden inne.</p>
+      <p class="hjelp">Registreringen ble avbrutt før profilen var lagret. Fyll ut resten, så er du inne.</p>
       <div id="meldingFullfor" class="melding" hidden></div>
       <form id="skjemaFullfor" novalidate>
         <div class="felt">
           <label for="fNavn">Fullt navn</label>
           <input id="fNavn" autocomplete="name" required>
         </div>
-        <div class="rad">
-          <div class="felt">
-            <label for="fInit">Initialer</label>
-            <input id="fInit" maxlength="4" autocapitalize="characters" required>
-          </div>
-          <div class="felt">
-            <label for="fMobil">Mobil</label>
-            <input id="fMobil" type="tel" inputmode="tel" autocomplete="tel" required>
-          </div>
+        <div class="felt">
+          <label for="fMobil">Mobil</label>
+          <input id="fMobil" type="tel" inputmode="tel" autocomplete="tel" required>
         </div>
         <button class="knapp" type="submit">Lagre profil</button>
       </form>
@@ -223,18 +221,17 @@
       <h2 id="hilsen">Min side</h2>
       <p class="detalj" id="minInfo"></p>
 
-      <div id="ventestatus" class="melding" hidden>
-        Søknaden din ligger til godkjenning. Du får en e-post når styret har behandlet den.
+      <div id="epostubekreftet" class="melding" hidden>
+        <p style="margin:0 0 .6rem">Vi har sendt en bekreftelseslenke til e-postadressen din. Klikk på den for å bekrefte at adressen er din.</p>
+        <button class="knapp stille liten" id="knappSendPaNytt" type="button">Send lenken på nytt</button>
       </div>
 
       <div id="medlemsliste" hidden>
-        <h3>Medlemmer</h3>
+        <h3 id="tittelMedlemmer">Medlemmer</h3>
         <div id="listeAktive"></div>
       </div>
 
       <div id="adminpanel" hidden>
-        <h3>Søknader til behandling</h3>
-        <div id="listeVenter"><p class="hjelp">Ingen søknader nå.</p></div>
         <h3>Tidligere medlemmer</h3>
         <div id="listeSluttet"></div>
       </div>
@@ -285,8 +282,11 @@ function melding(id, tekst, type) {
   el.className = "melding" + (type ? " " + type : "");
   el.hidden = !tekst;
 }
-function reisInitialer(v) {
-  return (v || "").trim().toUpperCase().replace(/[^A-ZÆØÅ]/g, "");
+function initialerFraNavn(navn) {
+  const deler = (navn || "").trim().split(/\s+/).filter(Boolean);
+  if (!deler.length) return "–";
+  if (deler.length === 1) return deler[0].slice(0, 2).toUpperCase();
+  return (deler[0][0] + deler[deler.length - 1][0]).toUpperCase();
 }
 function reisMobil(v) {
   return (v || "").replace(/[\s-]/g, "");
@@ -316,22 +316,12 @@ function byttFane(medlem) {
   $("panelInn").hidden = medlem;
 }
 
-/* ---------- Lagre profil + reservere initialer ---------- */
-async function lagreProfil(uid, { navn, initialer, mobil, epost }) {
-  const merke = doc(db, "initialer", initialer);
-  const finnes = await getDoc(merke);
-  if (finnes.exists() && finnes.data().uid !== uid) {
-    const feil = new Error("Initialene " + initialer + " er allerede i bruk. Velg noe annet.");
-    feil.code = "initialer-opptatt";
-    throw feil;
-  }
-  await setDoc(merke, { uid });
+/* ---------- Lagre profil ---------- */
+async function lagreProfil(uid, { navn, mobil, epost }) {
   await setDoc(doc(db, "medlemmer", uid), {
-    navn, initialer, mobil, epost,
-    status: "venter",
+    navn, mobil, epost,
+    status: "aktiv",
     rolle: "medlem",
-    blender: false,
-    gourmet: false,
     innmeldt: serverTimestamp()
   });
 }
@@ -341,22 +331,20 @@ $("skjemaReg").addEventListener("submit", async (e) => {
   e.preventDefault();
   const knapp = e.target.querySelector("button");
   const navn = $("regNavn").value.trim();
-  const initialer = reisInitialer($("regInit").value);
   const mobil = reisMobil($("regMobil").value);
   const epost = $("regEpost").value.trim();
   const passord = $("regPassord").value;
 
   if (navn.length < 2) return melding("meldingReg", "Skriv inn fullt navn.", "feil");
-  if (initialer.length < 2) return melding("meldingReg", "Initialene må være 2–4 bokstaver.", "feil");
   if (!gyldigMobil(mobil)) return melding("meldingReg", "Mobilnummeret må være 8 siffer.", "feil");
   if (passord.length < 8) return melding("meldingReg", "Passordet må være minst 8 tegn.", "feil");
 
   knapp.disabled = true;
   registrerer = true;
-  melding("meldingReg", "Sender søknaden …");
+  melding("meldingReg", "Registrerer …");
   try {
     const cred = await createUserWithEmailAndPassword(auth, epost, passord);
-    await lagreProfil(cred.user.uid, { navn, initialer, mobil, epost });
+    await lagreProfil(cred.user.uid, { navn, mobil, epost });
     try { await sendEmailVerification(cred.user); } catch (_) {}
     registrerer = false;
     melding("meldingReg", "", "");
@@ -366,7 +354,6 @@ $("skjemaReg").addEventListener("submit", async (e) => {
     if (auth.currentUser) {
       // Kontoen ble opprettet, men profilen ble ikke lagret.
       $("fNavn").value = navn;
-      $("fInit").value = initialer;
       $("fMobil").value = mobil;
       vis("visFullfor");
       melding("meldingFullfor", feiltekst(err), "feil");
@@ -384,13 +371,11 @@ $("skjemaFullfor").addEventListener("submit", async (e) => {
   const bruker = auth.currentUser;
   if (!bruker) return;
   const navn = $("fNavn").value.trim();
-  const initialer = reisInitialer($("fInit").value);
   const mobil = reisMobil($("fMobil").value);
   if (navn.length < 2) return melding("meldingFullfor", "Skriv inn fullt navn.", "feil");
-  if (initialer.length < 2) return melding("meldingFullfor", "Initialene må være 2–4 bokstaver.", "feil");
   if (!gyldigMobil(mobil)) return melding("meldingFullfor", "Mobilnummeret må være 8 siffer.", "feil");
   try {
-    await lagreProfil(bruker.uid, { navn, initialer, mobil, epost: bruker.email });
+    await lagreProfil(bruker.uid, { navn, mobil, epost: bruker.email });
     await tegnMedlem(bruker);
   } catch (err) {
     melding("meldingFullfor", feiltekst(err), "feil");
@@ -421,34 +406,75 @@ $("knappNyttPassord").addEventListener("click", async () => {
 
 $("knappUt").addEventListener("click", () => signOut(auth));
 
+$("knappSendPaNytt").addEventListener("click", async (e) => {
+  const knapp = e.currentTarget;
+  if (!auth.currentUser) return;
+  knapp.disabled = true;
+  try {
+    await sendEmailVerification(auth.currentUser);
+    melding("meldingMedlem", "Lenken er sendt på nytt. Sjekk innboksen, og eventuelt søppelpost.", "ok");
+  } catch (err) {
+    melding("meldingMedlem", feiltekst(err), "feil");
+  } finally {
+    knapp.disabled = false;
+  }
+});
+
 /* ---------- Medlemssiden ---------- */
+function penMobil(nr) {
+  const rein = (nr || "").replace(/\D/g, "");
+  if (rein.length === 8) return rein.slice(0, 3) + " " + rein.slice(3, 5) + " " + rein.slice(5);
+  return nr || "";
+}
+
 function kort(m, admin) {
   const rad = document.createElement("div");
   rad.className = "medlem";
 
-  const venstre = document.createElement("div");
+  const merke = document.createElement("div");
+  merke.className = "init";
+  merke.textContent = initialerFraNavn(m.navn);
+
+  const info = document.createElement("div");
+  info.className = "info";
+
   const navn = document.createElement("div");
   navn.className = "navn";
-  navn.textContent = m.navn + " (" + m.initialer + ")";
-  const detalj = document.createElement("div");
-  detalj.className = "detalj";
-  detalj.textContent = [m.mobil, m.epost].filter(Boolean).join(" · ");
-  venstre.append(navn, detalj);
+  navn.textContent = m.navn;
+  info.append(navn);
+
+  const kontakt = document.createElement("div");
+  kontakt.className = "kontakt";
+  if (m.mobil) {
+    const tlf = document.createElement("a");
+    tlf.className = "mobil";
+    tlf.href = "tel:" + (m.mobil.startsWith("+") ? m.mobil : "+47" + m.mobil);
+    tlf.textContent = penMobil(m.mobil);
+    kontakt.append(tlf);
+  }
+  if (m.epost) {
+    const post = document.createElement("a");
+    post.href = "mailto:" + m.epost;
+    post.textContent = m.epost;
+    kontakt.append(post);
+  }
+  info.append(kontakt);
 
   const hoyre = document.createElement("div");
   hoyre.className = "handling";
   if (m.status !== "aktiv") {
-    const merke = document.createElement("span");
-    merke.className = "status " + m.status;
-    merke.textContent = m.status === "venter" ? "Til godkjenning" : "Sluttet";
-    hoyre.append(merke);
+    const merkelapp = document.createElement("span");
+    merkelapp.className = "status " + m.status;
+    merkelapp.textContent = m.status === "venter" ? "Til godkjenning" : "Sluttet";
+    hoyre.append(merkelapp);
   }
   if (admin) {
     if (m.status === "venter") hoyre.append(handlingsknapp("Godkjenn", m.id, "aktiv"));
     if (m.status === "aktiv") hoyre.append(handlingsknapp("Sett sluttet", m.id, "sluttet"));
     if (m.status === "sluttet") hoyre.append(handlingsknapp("Aktiver", m.id, "aktiv"));
   }
-  rad.append(venstre, hoyre);
+
+  rad.append(merke, info, hoyre);
   return rad;
 }
 
@@ -476,9 +502,10 @@ async function tegnMedlem(bruker) {
   const admin = meg.rolle === "admin";
 
   vis("visMedlem");
+  try { await bruker.reload(); } catch (_) {}
+  $("epostubekreftet").hidden = auth.currentUser ? auth.currentUser.emailVerified : true;
   $("hilsen").textContent = "Hei, " + meg.navn.split(" ")[0];
-  $("minInfo").textContent = meg.initialer + " · " + meg.mobil + " · " + meg.epost;
-  $("ventestatus").hidden = meg.status !== "venter";
+  $("minInfo").textContent = penMobil(meg.mobil) + " · " + meg.epost;
   $("medlemsliste").hidden = meg.status !== "aktiv";
   $("adminpanel").hidden = !admin;
 
@@ -503,8 +530,9 @@ async function tegnMedlem(bruker) {
   };
 
   tegnListe("listeAktive", m => m.status === "aktiv", "Ingen aktive medlemmer ennå.");
+  const antall = alle.filter(m => m.status === "aktiv").length;
+  $("tittelMedlemmer").innerHTML = "Medlemmer <span class=\"antall\">(" + antall + ")</span>";
   if (admin) {
-    tegnListe("listeVenter", m => m.status === "venter", "Ingen søknader nå.");
     tegnListe("listeSluttet", m => m.status === "sluttet", "Ingen registrert som sluttet.");
   }
 }
