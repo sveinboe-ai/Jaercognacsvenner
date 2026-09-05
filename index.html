@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.7 – 5. september 2026 -->
+     Versjon 1.8 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -543,7 +543,7 @@
 
   <footer class="bunn">
     Spørsmål om medlemskap eller registrerte opplysninger rettes til admin. Du kan når som helst be om å bli slettet fra registeret.
-    <span class="versjon">Versjon 1.7</span>
+    <span class="versjon">Versjon 1.8</span>
   </footer>
 </div>
 
@@ -1794,7 +1794,8 @@ async function importer(e, feltId) {
   const gamleBlendinger = Array.isArray(data.blendinger) ? data.blendinger : [];
   const harTitler = data.titler && typeof data.titler === "object";
   const harTillegg = data.tillegg && typeof data.tillegg === "object";
-  if (!rader.length && !gamleBlendinger.length && !harTitler && !harTillegg) {
+  const harNavn = data.medlemmer && typeof data.medlemmer === "object";
+  if (!rader.length && !gamleBlendinger.length && !harTitler && !harTillegg && !harNavn) {
     return melding("meldingArkiv", "Fant verken smakinger eller blendinger i dataene.", "feil");
   }
 
@@ -1839,7 +1840,8 @@ async function importer(e, feltId) {
       rader.length ? rader.length + " smakinger" : "",
       gamle.length ? gamle.length + " blendinger" : "",
       harTitler ? Object.keys(data.titler).length + " titler" : "",
-      harTillegg ? Object.keys(data.tillegg).length + " tillegg" : ""
+      harTillegg ? Object.keys(data.tillegg).length + " tillegg" : "",
+      harNavn ? Object.keys(data.medlemmer).length + " navn" : ""
     ].filter(Boolean).join(" og ") + " er importert.", "ok");
     tegnArkiv();
   } catch (err) {
