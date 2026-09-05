@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.18 – 5. september 2026 -->
+     Versjon 1.19 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -553,7 +553,7 @@
 
   <footer class="bunn">
     Spørsmål om medlemskap eller registrerte opplysninger rettes til admin. Du kan når som helst be om å bli slettet fra registeret.
-    <span class="versjon">Versjon 1.18</span>
+    <span class="versjon">Versjon 1.19</span>
   </footer>
 </div>
 
@@ -631,7 +631,10 @@ function apnePanel(navn) {
   if (erKlasse) { $("klasseTittel").textContent = navn; tegnKlasse(navn); }
   if (navn === "Blending") tegnBlending();
   if (navn === "arkiv") tegnArkiv();
-  if (navn === "ansiennitet") tegnAnsiennitet();
+  if (navn === "ansiennitet") {
+    tegnAnsiennitet();
+    if (erJcc) lastArkivDetaljer().then(tegnAnsiennitet).catch(() => {});
+  }
   document.querySelectorAll(".menyvalg").forEach(b => {
     b.setAttribute("aria-current", String(b.dataset.panel === navn));
   });
@@ -1669,36 +1672,25 @@ async function lastArkiv() {
   const treff = await getDocs(collection(db, "historikk"));
   treff.forEach(d => historikk.push({ id: d.id, ...d.data() }));
   historikk.sort((a, b) => (b.dato || "").localeCompare(a.dato || ""));
-  try {
-    const navn = await getDoc(doc(db, "arkiv", "initialer"));
-    arkivNavn = navn.exists() ? navn.data() : {};
-  } catch (_) {
-    arkivNavn = {};
-  }
-  try {
-    const t = await getDoc(doc(db, "arkiv", "titler"));
-    arkivTitler = t.exists() ? t.data() : {};
-  } catch (_) {
-    arkivTitler = {};
-  }
-  try {
-    const t = await getDoc(doc(db, "arkiv", "tillegg"));
-    arkivTillegg = t.exists() ? t.data() : {};
-  } catch (_) {
-    arkivTillegg = {};
-  }
-  try {
-    const t = await getDoc(doc(db, "arkiv", "start"));
-    arkivStart = t.exists() ? t.data() : {};
-  } catch (_) {
-    arkivStart = {};
-  }
-  try {
-    const t = await getDoc(doc(db, "arkiv", "slutt"));
-    arkivSlutt = t.exists() ? t.data() : {};
-  } catch (_) {
-    arkivSlutt = {};
-  }
+  await lastArkivDetaljer();
+}
+
+// Navn, titler, tillegg og datoer. Små dokumenter som hentes på nytt
+// hver gang ansiennitetslista åpnes, så endringer slår gjennom med en gang.
+async function lastArkivDetaljer() {
+  const hent = async (navn) => {
+    try {
+      const d = await getDoc(doc(db, "arkiv", navn));
+      return d.exists() ? d.data() : {};
+    } catch (_) {
+      return {};
+    }
+  };
+  arkivNavn = await hent("initialer");
+  arkivTitler = await hent("titler");
+  arkivTillegg = await hent("tillegg");
+  arkivStart = await hent("start");
+  arkivSlutt = await hent("slutt");
 }
 
 // Utnevnte titler fra klubben, til forskjell fra den utregnede treffprosenttittelen
