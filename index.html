@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.20 – 5. september 2026 -->
+     Versjon 1.21 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -174,6 +174,13 @@
     font-variant-numeric:tabular-nums;
   }
   .plass.forst{color:var(--kobber)}
+  .redigerrad{padding:1.1rem 0;border-bottom:1px solid var(--linje)}
+  .redigerrad .init{
+    width:auto;height:auto;border:0;border-radius:0;
+    font-size:.75rem;letter-spacing:.06em;color:var(--kobber);
+    display:block;margin-bottom:.4rem;
+  }
+  .redigerrad .felt{margin-bottom:.7rem}
   .rad{display:flex;align-items:baseline;gap:.9rem;padding:.7rem 0;border-bottom:1px solid var(--linje)}
   .rad:last-child{border-bottom:0}
   .rad .venstre{flex:1;min-width:0}
@@ -433,6 +440,11 @@
       <div class="boks" id="panelAnsiennitet" hidden>
         <h3>Ansiennitet</h3>
         <p class="hjelp">Hvor lenge hver enkelt har vært med, regnet fram til i dag. Der startdato ikke er lagt inn, brukes den første registreringen i basen.</p>
+        <div id="adminRediger" hidden style="margin-top:1.25rem">
+          <button class="knapp stille liten" id="knappRediger" type="button">Rediger navn, dato og titler</button>
+        </div>
+        <div id="meldingAnsiennitet" class="melding" hidden style="margin-top:1.25rem"></div>
+        <div id="redigerListe" hidden style="margin-top:1.5rem"></div>
         <div id="listeAnsiennitet" style="margin-top:1.5rem"></div>
       </div>
 
@@ -549,7 +561,7 @@
 
   <footer class="bunn">
     Spørsmål om medlemskap eller registrerte opplysninger rettes til admin. Du kan når som helst be om å bli slettet fra registeret.
-    <span class="versjon">Versjon 1.20</span>
+    <span class="versjon">Versjon 1.21</span>
   </footer>
 </div>
 
@@ -628,6 +640,7 @@ function apnePanel(navn) {
   if (navn === "Blending") tegnBlending();
   if (navn === "arkiv") tegnArkiv();
   if (navn === "ansiennitet") {
+    $("adminRediger").hidden = !erAdmin;
     tegnAnsiennitet();
     if (erJcc) lastArkivDetaljer().then(tegnAnsiennitet).catch(() => {});
   }
@@ -1880,7 +1893,7 @@ function tegnAnsiennitet() {
   const rader = alle
     .filter(init => !arkivSlutt[init] && !SLUTTET.includes(init))
     .map(init => {
-      const oppgitt = arkivStart[init];
+      const oppgitt = arkivStart[init] || "";
       const dato = oppgitt || funnet[init];
       return { init, dato, oppgitt: Boolean(oppgitt), ar: arSiden(dato) };
     })
@@ -1907,6 +1920,88 @@ function tegnAnsiennitet() {
       stjerne.title = Math.floor(r.ar / 5) * 5 + " år som medlem";
       rad.insertBefore(stjerne, rad.lastChild);
     }
+    boks.append(rad);
+  });
+}
+
+/* ---------- Rediger navn, startdato og titler ---------- */
+// Skriver til de samme dokumentene som importen, men uten JSON.
+
+$("knappRediger").addEventListener("click", () => {
+  const boks = $("redigerListe");
+  boks.hidden = !boks.hidden;
+  $("knappRediger").textContent = boks.hidden ? "Rediger navn, dato og titler" : "Lukk redigering";
+  if (!boks.hidden) tegnRediger();
+});
+
+function alleInitialer() {
+  const funnet = new Set();
+  historikk.forEach(h => Object.keys(h.poeng || {}).forEach(i => funnet.add(i)));
+  blendingArkiv.forEach(b => Object.keys(b.resultat || {}).forEach(i => funnet.add(i)));
+  Object.keys(arkivNavn).forEach(i => funnet.add(i));
+  return [...funnet].sort((a, b) =>
+    (arkivNavn[a] || a).localeCompare(arkivNavn[b] || b, "nb"));
+}
+
+function tegnRediger() {
+  const boks = $("redigerListe");
+  boks.textContent = "";
+
+  const hjelp = document.createElement("p");
+  hjelp.className = "hjelp";
+  hjelp.textContent = "Skriv flere titler med komma mellom, for eksempel: CEO, Styreleder XX, Medgrunnlegger. Tomt felt fjerner det som står der.";
+  boks.append(hjelp);
+
+  alleInitialer().forEach(init => {
+    const rad = document.createElement("div");
+    rad.className = "redigerrad";
+
+    const merke = document.createElement("span");
+    merke.className = "init";
+    merke.textContent = init;
+    rad.append(merke);
+
+    const lagFelt = (etikett, type, verdi, plassholder) => {
+      const felt = document.createElement("div");
+      felt.className = "felt";
+      const l = document.createElement("label");
+      l.textContent = etikett;
+      const i = document.createElement("input");
+      i.type = type;
+      i.value = verdi || "";
+      if (plassholder) i.placeholder = plassholder;
+      felt.append(l, i);
+      rad.append(felt);
+      return i;
+    };
+
+    const navn = lagFelt("Navn", "text", arkivNavn[init] || "", "Fullt navn");
+    const dato = lagFelt("Medlem siden", "date", arkivStart[init] || "");
+    const titler = lagFelt("Titler", "text", (arkivTitler[init] || []).join(", "), "Ingen");
+    const sluttet = lagFelt("Sluttet", "date", arkivSlutt[init] || "");
+
+    const lagre = document.createElement("button");
+    lagre.className = "knapp liten";
+    lagre.type = "button";
+    lagre.textContent = "Lagre";
+    lagre.addEventListener("click", async () => {
+      lagre.disabled = true;
+      try {
+        const liste = titler.value.split(",").map(x => x.trim()).filter(Boolean);
+        await setDoc(doc(db, "arkiv", "initialer"), { [init]: navn.value.trim() }, { merge: true });
+        await setDoc(doc(db, "arkiv", "start"), { [init]: dato.value || "" }, { merge: true });
+        await setDoc(doc(db, "arkiv", "titler"), { [init]: liste }, { merge: true });
+        await setDoc(doc(db, "arkiv", "slutt"), { [init]: sluttet.value || "" }, { merge: true });
+        await lastArkivDetaljer();
+        tegnAnsiennitet();
+        melding("meldingAnsiennitet", (navn.value.trim() || init) + " er lagret.", "ok");
+      } catch (err) {
+        melding("meldingAnsiennitet", feiltekst(err), "feil");
+      } finally {
+        lagre.disabled = false;
+      }
+    });
+    rad.append(lagre);
     boks.append(rad);
   });
 }
