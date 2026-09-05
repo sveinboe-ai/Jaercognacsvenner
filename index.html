@@ -483,6 +483,13 @@
 
         <h3 style="margin-top:2.5rem">Treffprosent</h3>
         <div id="listeRangering"></div>
+
+        <h3 style="margin-top:2.5rem">Tidligere blendinger</h3>
+        <p class="hjelp">Fra den gamle poengbasen. Der er bare treff og bom notert, ikke hva den enkelte gjettet.</p>
+        <div id="listeArkivBlending"></div>
+
+        <h3 style="margin-top:2.5rem">Treffprosent i arkivet</h3>
+        <div id="listeArkivRangering"></div>
       </div>
     </section>
   </main>
@@ -864,10 +871,10 @@ async function tegnMedlem(bruker) {
   treff.forEach(d => alle.push({ id: d.id, ...d.data() }));
   medlemmer = alle;
   try {
-    if (erJcc) { await lastBlendinger(); await lastArkiv(); }
+    if (erJcc) { await lastBlendinger(); await lastArkiv(); await lastBlendingArkiv(); }
     await lastSammendrag();
   } catch (err) {
-    if (!erJcc) { blendinger = []; historikk = []; }
+    if (!erJcc) { blendinger = []; historikk = []; blendingArkiv = []; }
   }
 
   tegnMedlemsliste();
@@ -1036,6 +1043,7 @@ function tegnBlending() {
   }
 
   tegnRangering();
+  tegnBlendingArkiv();
 }
 
 function blendingDetalj(b) {
@@ -1254,6 +1262,91 @@ $("skjemaBlending").addEventListener("submit", async (e) => {
     knapp.disabled = false;
   }
 });
+
+/* ---------- Blendinger fra den gamle poengbasen ---------- */
+let blendingArkiv = [];
+let apenArkivBlending = null;
+
+async function lastBlendingArkiv() {
+  blendingArkiv = [];
+  const treff = await getDocs(collection(db, "blendingarkiv"));
+  treff.forEach(d => blendingArkiv.push({ id: d.id, ...d.data() }));
+  blendingArkiv.sort((a, b) => (b.dato || "").localeCompare(a.dato || ""));
+}
+
+function arkivRette(s, init) {
+  const g = (s.resultat || {})[init] || {};
+  return GLASS.filter(x => g[x] === "rett").length;
+}
+
+function tegnBlendingArkiv() {
+  const boks = $("listeArkivBlending");
+  boks.textContent = "";
+  if (!blendingArkiv.length) {
+    boks.append(tomtSvar("Ingen tidligere blendinger importert."));
+  } else {
+    blendingArkiv.forEach(b => {
+      const deltakere = Object.keys(b.resultat || {});
+      const rad = radElement(
+        norskDato(b.dato) + " · " + b.klassifisering,
+        GLASS.map(g => g + ": " + b.fasit[g]).join("   ") + (b.sted ? "   " + b.sted : ""),
+        deltakere.length + " deltakere",
+        true
+      );
+      rad.classList.add("valgbar");
+      rad.addEventListener("click", () => {
+        apenArkivBlending = apenArkivBlending === b.id ? null : b.id;
+        tegnBlendingArkiv();
+      });
+      boks.append(rad);
+
+      if (apenArkivBlending === b.id) {
+        const detalj = document.createElement("div");
+        detalj.className = "detalj";
+        deltakere
+          .map(init => ({ init, rette: arkivRette(b, init) }))
+          .sort((x, y) => y.rette - x.rette || x.init.localeCompare(y.init))
+          .forEach(({ init, rette }) => {
+            const g = b.resultat[init];
+            const under = GLASS.map(x => x + " " + (g[x] === "rett" ? "✓" : "✗")).join("    ");
+            const r = radElement(arkivNavnFor(init), under, rette + "/3");
+            if (rette === 3) r.querySelector(".tall").classList.add("rett");
+            if (rette === 2) r.querySelector(".tall").classList.add("bom");
+            detalj.append(r);
+          });
+        boks.append(detalj);
+      }
+    });
+  }
+
+  // Treffprosent gjennom hele arkivet
+  const sum = {};
+  blendingArkiv.forEach(b => {
+    Object.keys(b.resultat || {}).forEach(init => {
+      if (!sum[init]) sum[init] = { rette: 0, glass: 0, runder: 0 };
+      sum[init].rette += arkivRette(b, init);
+      sum[init].glass += GLASS.filter(g => b.resultat[init][g]).length;
+      sum[init].runder += 1;
+    });
+  });
+  const rangering = $("listeArkivRangering");
+  rangering.textContent = "";
+  const alle = Object.keys(sum);
+  if (!alle.length) {
+    rangering.append(tomtSvar("Ingen treffprosent å regne ut ennå."));
+    return;
+  }
+  alle
+    .map(init => ({ init, ...sum[init], prosent: (sum[init].rette / sum[init].glass) * 100 }))
+    .sort((a, b) => b.prosent - a.prosent || b.rette - a.rette)
+    .forEach(r => {
+      rangering.append(radElement(
+        arkivNavnFor(r.init),
+        r.rette + " rette av " + r.glass + " glass, " + r.runder + (r.runder === 1 ? " blending" : " blendinger"),
+        tall(r.prosent, 0) + " %"
+      ));
+    });
+}
 
 /* ---------- Treffprosent over alle blendinger ---------- */
 function tegnRangering() {
@@ -1490,11 +1583,24 @@ $("skjemaImport").addEventListener("submit", async (e) => {
         poeng: r.poeng || {}
       });
     }
+    const gamle = Array.isArray(data.blendinger) ? data.blendinger : [];
+    for (const b of gamle) {
+      if (!b.dato || !b.klassifisering || !b.fasit) continue;
+      await setDoc(doc(db, "blendingarkiv", b.dato + "-" + b.klassifisering.toLowerCase()), {
+        dato: b.dato,
+        klassifisering: b.klassifisering,
+        fasit: b.fasit,
+        sted: b.sted || "",
+        resultat: b.resultat || {}
+      });
+    }
     await lastArkiv();
+    await lastBlendingArkiv();
     await skrivSammendrag();
     $("importData").value = "";
     $("skjemaImport").hidden = true;
-    melding("meldingArkiv", rader.length + " smakinger er importert.", "ok");
+    melding("meldingArkiv", rader.length + " smakinger"
+      + (gamle.length ? " og " + gamle.length + " blendinger" : "") + " er importert.", "ok");
     tegnArkiv();
   } catch (err) {
     melding("meldingArkiv", feiltekst(err), "feil");
