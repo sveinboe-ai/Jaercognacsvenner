@@ -1,4 +1,6 @@
 <!doctype html>
+<!-- Jærcognacens venner – medlemsregister
+     Versjon 1.0 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -186,6 +188,7 @@
   .klubb{margin:.2rem 0 0;font-size:.85rem;color:var(--kobber)}
   .antall{font-family:Karla,sans-serif;font-size:.9rem;color:var(--dempet)}
 
+  .versjon{display:block;margin-top:.9rem;font-size:.78rem;color:var(--linje)}
   .bunn{margin-top:3.5rem;padding-top:1.25rem;border-top:1px solid var(--linje);
     font-size:.85rem;color:var(--dempet);max-width:30rem}
 
@@ -496,6 +499,7 @@
 
   <footer class="bunn">
     Spørsmål om medlemskap eller registrerte opplysninger rettes til admin. Du kan når som helst be om å bli slettet fra registeret.
+    <span class="versjon">Versjon 1.0</span>
   </footer>
 </div>
 
@@ -1578,7 +1582,10 @@ $("skjemaImport").addEventListener("submit", async (e) => {
     return melding("meldingArkiv", "Teksten er ikke gyldig JSON." + kuttet + rundt, "feil");
   }
   const rader = Array.isArray(data.smakinger) ? data.smakinger : [];
-  if (!rader.length) return melding("meldingArkiv", "Fant ingen smakinger i dataene.", "feil");
+  const gamleBlendinger = Array.isArray(data.blendinger) ? data.blendinger : [];
+  if (!rader.length && !gamleBlendinger.length) {
+    return melding("meldingArkiv", "Fant verken smakinger eller blendinger i dataene.", "feil");
+  }
 
   knapp.disabled = true;
   melding("meldingArkiv", "Importerer …");
@@ -1595,7 +1602,7 @@ $("skjemaImport").addEventListener("submit", async (e) => {
         poeng: r.poeng || {}
       });
     }
-    const gamle = Array.isArray(data.blendinger) ? data.blendinger : [];
+    const gamle = gamleBlendinger;
     for (const b of gamle) {
       if (!b.dato || !b.klassifisering || !b.fasit) continue;
       await setDoc(doc(db, "blendingarkiv", b.dato + "-" + b.klassifisering.toLowerCase()), {
@@ -1611,8 +1618,10 @@ $("skjemaImport").addEventListener("submit", async (e) => {
     await skrivSammendrag();
     $("importData").value = "";
     $("skjemaImport").hidden = true;
-    melding("meldingArkiv", rader.length + " smakinger"
-      + (gamle.length ? " og " + gamle.length + " blendinger" : "") + " er importert.", "ok");
+    melding("meldingArkiv", [
+      rader.length ? rader.length + " smakinger" : "",
+      gamle.length ? gamle.length + " blendinger" : ""
+    ].filter(Boolean).join(" og ") + " er importert.", "ok");
     tegnArkiv();
   } catch (err) {
     melding("meldingArkiv", feiltekst(err), "feil");
