@@ -145,6 +145,11 @@
   }
   .framgang li{margin-bottom:.45rem;padding-left:.2rem}
   .framgang li::marker{color:var(--kobber)}
+  textarea{
+    width:100%;padding:.6rem .7rem;font:inherit;font-size:.9rem;color:var(--blekk);
+    background:none;border:1px solid var(--linje);border-radius:1px;resize:vertical;
+  }
+  textarea:focus{outline:none;border-color:var(--kobber)}
   .rad{display:flex;align-items:baseline;gap:.9rem;padding:.7rem 0;border-bottom:1px solid var(--linje)}
   .rad:last-child{border-bottom:0}
   .rad .venstre{flex:1;min-width:0}
@@ -216,6 +221,7 @@
       <div class="menytekst">
         <button class="menyvalg tekstvalg" type="button" data-panel="profil" hidden>Min profil</button>
         <button class="menyvalg tekstvalg" type="button" data-panel="medlemmer" hidden>Medlemmer</button>
+        <button class="menyvalg tekstvalg" type="button" data-panel="arkiv" hidden>Arkiv</button>
       </div>
       <div class="glassrad">
         <button class="menyvalg glass" type="button" data-panel="VS" disabled style="--niva:var(--vs);--vent:0.0s">
@@ -394,6 +400,27 @@
         <div id="klasseInnhold"></div>
       </div>
 
+      <div class="boks" id="panelArkiv" hidden>
+        <h3>Arkiv</h3>
+        <p class="hjelp">Smakinger fra den gamle poengbasen. Poengene hører til initialene som ble brukt den gangen, og de teller med i snittet under VS, VSOP og XO.</p>
+
+        <div id="meldingArkiv" class="melding" hidden></div>
+
+        <div id="adminImport" hidden>
+          <button class="knapp stille liten" id="knappImport" type="button">Importer fra poengbasen</button>
+          <form id="skjemaImport" hidden style="margin-top:1.25rem">
+            <div class="felt">
+              <label for="importData">Data som JSON</label>
+              <textarea id="importData" rows="8" placeholder='{"medlemmer": {"ODH": "Odd Jan Håland"}, "smakinger": [...]}'></textarea>
+              <p class="hjelp">Samme smaking kan importeres flere ganger uten å bli liggende dobbelt.</p>
+            </div>
+            <button class="knapp" type="submit">Importer</button>
+          </form>
+        </div>
+
+        <div id="listeArkiv" style="margin-top:1.5rem"></div>
+      </div>
+
       <div class="boks" id="panelBlending" hidden>
         <h3>Blending</h3>
         <ol class="framgang">
@@ -516,10 +543,12 @@ function apnePanel(navn) {
   const erKlasse = ["VS", "VSOP", "XO", "Cocktail"].includes(navn);
   $("panelProfil").hidden = navn !== "profil";
   $("panelMedlemmer").hidden = navn !== "medlemmer";
+  $("panelArkiv").hidden = navn !== "arkiv";
   $("panelKlasse").hidden = !erKlasse;
   $("panelBlending").hidden = navn !== "Blending";
   if (erKlasse) { $("klasseTittel").textContent = navn; tegnKlasse(navn); }
   if (navn === "Blending") tegnBlending();
+  if (navn === "arkiv") tegnArkiv();
   document.querySelectorAll(".menyvalg").forEach(b => {
     b.setAttribute("aria-current", String(b.dataset.panel === navn));
   });
@@ -529,6 +558,7 @@ function menyTilgjengelig(paa) {
   document.querySelectorAll(".menyvalg").forEach(b => {
     const personlig = ["profil", "medlemmer"].includes(b.dataset.panel);
     if (personlig) b.hidden = !paa;
+    else if (b.dataset.panel === "arkiv") b.hidden = !(paa && erJcc);
     else if (b.dataset.panel === "Blending") {
       b.hidden = !(paa && erJcc);
       b.disabled = !(paa && erJcc);
@@ -791,7 +821,7 @@ async function tegnMedlem(bruker) {
 
   vis("visMedlem");
   menyTilgjengelig(true);
-  if ($("panelProfil").hidden && $("panelMedlemmer").hidden && $("panelKlasse").hidden && $("panelBlending").hidden) apnePanel("profil");
+  if ($("panelProfil").hidden && $("panelMedlemmer").hidden && $("panelKlasse").hidden && $("panelBlending").hidden && $("panelArkiv").hidden) apnePanel("profil");
   $("hilsen").textContent = "Hei, " + meg.navn.split(" ")[0];
   $("minInfo").textContent = penMobil(meg.mobil);
   $("minEpost").textContent = meg.epost;
@@ -817,10 +847,10 @@ async function tegnMedlem(bruker) {
   treff.forEach(d => alle.push({ id: d.id, ...d.data() }));
   medlemmer = alle;
   try {
-    if (erJcc) await lastBlendinger();
+    if (erJcc) { await lastBlendinger(); await lastArkiv(); }
     await lastSammendrag();
   } catch (err) {
-    if (!erJcc) blendinger = [];
+    if (!erJcc) { blendinger = []; historikk = []; }
   }
 
   tegnMedlemsliste();
@@ -879,6 +909,16 @@ function klasseTabell(klasse) {
         });
       });
     });
+  historikk
+    .filter(h => h.klassifisering === klasse)
+    .forEach(h => {
+      if (!samlet[h.cognac]) samlet[h.cognac] = { poeng: [], ganger: 0 };
+      samlet[h.cognac].ganger += 1;
+      Object.values(h.poeng || {}).forEach(p => {
+        if (typeof p === "number") samlet[h.cognac].poeng.push(p);
+      });
+    });
+
   return Object.keys(samlet)
     .map(navn => {
       const d = samlet[navn];
@@ -1259,6 +1299,128 @@ function tegnKlasse(klasse) {
     boks.append(radElement(c.navn, under, c.snitt === null || c.snitt === undefined ? "–" : tall(c.snitt)));
   });
 }
+
+/* ---------- Arkiv fra den gamle poengbasen ---------- */
+// Historikken er ferdig og endres aldri. Den lever derfor ved siden av
+// blendingene, med poeng knyttet til initialene som ble brukt den gangen.
+
+let historikk = [];
+let arkivNavn = {};
+
+async function lastArkiv() {
+  historikk = [];
+  const treff = await getDocs(collection(db, "historikk"));
+  treff.forEach(d => historikk.push({ id: d.id, ...d.data() }));
+  historikk.sort((a, b) => (b.dato || "").localeCompare(a.dato || ""));
+  try {
+    const navn = await getDoc(doc(db, "arkiv", "initialer"));
+    arkivNavn = navn.exists() ? navn.data() : {};
+  } catch (_) {
+    arkivNavn = {};
+  }
+}
+
+function arkivNavnFor(init) {
+  return arkivNavn[init] ? arkivNavn[init] + " (" + init + ")" : init;
+}
+
+function tegnArkiv() {
+  $("adminImport").hidden = !erAdmin;
+  const boks = $("listeArkiv");
+  boks.textContent = "";
+
+  if (!historikk.length) {
+    boks.append(tomtSvar(erAdmin
+      ? "Ingenting importert ennå. Trykk «Importer fra poengbasen» for å legge inn historikken."
+      : "Ingenting i arkivet ennå."));
+    return;
+  }
+
+  historikk.forEach(h => {
+    const poeng = Object.values(h.poeng || {}).filter(x => typeof x === "number");
+    const snitt = poeng.length ? poeng.reduce((a, b) => a + b, 0) / poeng.length : null;
+    const rad = radElement(
+      h.cognac,
+      norskDato(h.dato) + " · " + h.klassifisering + " · "
+        + poeng.length + (poeng.length === 1 ? " karakter" : " karakterer"),
+      snitt === null ? "–" : tall(snitt)
+    );
+    rad.classList.add("valgbar");
+    rad.addEventListener("click", () => {
+      apentArkiv = apentArkiv === h.id ? null : h.id;
+      tegnArkiv();
+    });
+    boks.append(rad);
+
+    if (apentArkiv === h.id) {
+      const detalj = document.createElement("div");
+      detalj.className = "detalj";
+      Object.keys(h.poeng || {})
+        .sort((a, b) => h.poeng[b] - h.poeng[a])
+        .forEach(init => {
+          detalj.append(radElement(arkivNavnFor(init), "", tall(h.poeng[init])));
+        });
+      boks.append(detalj);
+    }
+  });
+}
+
+let apentArkiv = null;
+
+/* ---------- Import ---------- */
+$("knappImport").addEventListener("click", () => {
+  const form = $("skjemaImport");
+  form.hidden = !form.hidden;
+});
+
+function arkivId(dato, cognac, klasse) {
+  return (dato + "-" + klasse + "-" + cognac)
+    .toLowerCase()
+    .replace(/[æ]/g, "ae").replace(/[ø]/g, "oe").replace(/[å]/g, "aa")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 120);
+}
+
+$("skjemaImport").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const knapp = e.target.querySelector("button");
+  let data;
+  try {
+    data = JSON.parse($("importData").value);
+  } catch (_) {
+    return melding("meldingArkiv", "Teksten er ikke gyldig JSON. Sjekk at klammer og komma står riktig.", "feil");
+  }
+  const rader = Array.isArray(data.smakinger) ? data.smakinger : [];
+  if (!rader.length) return melding("meldingArkiv", "Fant ingen smakinger i dataene.", "feil");
+
+  knapp.disabled = true;
+  melding("meldingArkiv", "Importerer …");
+  try {
+    if (data.medlemmer && typeof data.medlemmer === "object") {
+      await setDoc(doc(db, "arkiv", "initialer"), data.medlemmer, { merge: true });
+    }
+    for (const r of rader) {
+      if (!r.cognac || !r.dato || !r.klassifisering) continue;
+      await setDoc(doc(db, "historikk", arkivId(r.dato, r.cognac, r.klassifisering)), {
+        cognac: r.cognac,
+        dato: r.dato,
+        klassifisering: r.klassifisering,
+        poeng: r.poeng || {}
+      });
+    }
+    await lastArkiv();
+    await skrivSammendrag();
+    $("importData").value = "";
+    $("skjemaImport").hidden = true;
+    melding("meldingArkiv", rader.length + " smakinger er importert.", "ok");
+    tegnArkiv();
+  } catch (err) {
+    melding("meldingArkiv", feiltekst(err), "feil");
+  } finally {
+    knapp.disabled = false;
+  }
+});
 
 /* ---------- Ruting ---------- */
 onAuthStateChanged(auth, async (bruker) => {
