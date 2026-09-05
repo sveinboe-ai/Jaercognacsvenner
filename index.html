@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.5 – 5. september 2026 -->
+     Versjon 1.6 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -192,6 +192,10 @@
   .valgbar{cursor:pointer}
   .valgbar:hover .tittel{color:var(--kobber)}
   .detalj{margin:1.25rem 0 0;padding:1.1rem 0 0;border-top:2px solid var(--kobber)}
+  .utnevnt{
+    flex-shrink:0;font-size:.7rem;letter-spacing:.05em;white-space:nowrap;
+    padding:.1rem .45rem;border:1px dashed var(--dempet);color:var(--dempet);
+  }
   .tittelmerke{
     flex-shrink:0;font-size:.7rem;letter-spacing:.05em;white-space:nowrap;
     padding:.1rem .45rem;border:1px solid var(--kobber);color:var(--kobber);
@@ -539,7 +543,7 @@
 
   <footer class="bunn">
     Spørsmål om medlemskap eller registrerte opplysninger rettes til admin. Du kan når som helst be om å bli slettet fra registeret.
-    <span class="versjon">Versjon 1.5</span>
+    <span class="versjon">Versjon 1.6</span>
   </footer>
 </div>
 
@@ -1451,11 +1455,11 @@ function tegnArkivRangering(elId) {
     .map(init => ({ init, ...sum[init], prosent: (sum[init].rette / sum[init].glass) * 100 }))
     .sort((a, b) => b.prosent - a.prosent || b.rette - a.rette)
     .forEach(r => {
-      boks.append(radElement(
+      boks.append(settUtnevnte(radElement(
         arkivNavnFor(r.init),
         r.rette + " rette av " + r.glass + " glass, " + r.runder + (r.runder === 1 ? " blending" : " blendinger"),
         tall(r.prosent, 0) + " %"
-      ));
+      ), r.init));
     });
 }
 
@@ -1476,8 +1480,9 @@ function tegnRangering() {
   boks.textContent = "";
 
   const sum = {};
-  const legg = (noekkel, navn, rette, glass, runder) => {
-    if (!sum[noekkel]) sum[noekkel] = { navn, rette: 0, glass: 0, runder: 0 };
+  const legg = (noekkel, navn, rette, glass, runder, init) => {
+    if (!sum[noekkel]) sum[noekkel] = { navn, init, rette: 0, glass: 0, runder: 0 };
+    if (init) sum[noekkel].init = init;
     if (navn) sum[noekkel].navn = navn;
     sum[noekkel].rette += rette;
     sum[noekkel].glass += glass;
@@ -1490,7 +1495,7 @@ function tegnRangering() {
       const medlem = medlemmer.find(m => (m.initialer || "").toUpperCase() === init);
       legg(init, medlem ? medlem.navn : arkivNavnFor(init),
            arkivRette(b, init),
-           GLASS.filter(g => b.resultat[init][g]).length, 1);
+           GLASS.filter(g => b.resultat[init][g]).length, 1, init);
     });
   });
 
@@ -1499,7 +1504,7 @@ function tegnRangering() {
     Object.keys(b.svar || {}).forEach(uid => {
       const medlem = medlemmer.find(m => m.id === uid);
       const init = medlem && medlem.initialer ? medlem.initialer.toUpperCase() : null;
-      legg(init || "uid:" + uid, medlem ? medlem.navn : navnPa(uid), rettePoeng(b, uid), 3, 1);
+      legg(init || "uid:" + uid, medlem ? medlem.navn : navnPa(uid), rettePoeng(b, uid), 3, 1, init);
     });
   });
 
@@ -1518,6 +1523,7 @@ function tegnRangering() {
         r.rette + " rette av " + r.glass + " glass, " + r.runder + (r.runder === 1 ? " blending" : " blendinger"),
         tall(r.prosent, 0) + " %"
       );
+      settUtnevnte(rad, r.init);
       const tittel = tittelFor(r.prosent, r.glass);
       if (tittel) {
         const merke = document.createElement("span");
@@ -1571,6 +1577,7 @@ function tegnKlasse(klasse) {
 
 let historikk = [];
 let arkivNavn = {};
+let arkivTitler = {};
 
 async function lastArkiv() {
   historikk = [];
@@ -1583,6 +1590,28 @@ async function lastArkiv() {
   } catch (_) {
     arkivNavn = {};
   }
+  try {
+    const t = await getDoc(doc(db, "arkiv", "titler"));
+    arkivTitler = t.exists() ? t.data() : {};
+  } catch (_) {
+    arkivTitler = {};
+  }
+}
+
+// Utnevnte titler fra klubben, til forskjell fra den utregnede treffprosenttittelen
+function utnevnteTitler(init) {
+  const t = init ? arkivTitler[init.toUpperCase()] : null;
+  return Array.isArray(t) ? t : [];
+}
+
+function settUtnevnte(rad, init) {
+  utnevnteTitler(init).forEach(navn => {
+    const merke = document.createElement("span");
+    merke.className = "utnevnt";
+    merke.textContent = navn;
+    rad.insertBefore(merke, rad.lastChild);
+  });
+  return rad;
 }
 
 function arkivNavnFor(init) {
@@ -1750,7 +1779,8 @@ async function importer(e, feltId) {
   }
   const rader = Array.isArray(data.smakinger) ? data.smakinger : [];
   const gamleBlendinger = Array.isArray(data.blendinger) ? data.blendinger : [];
-  if (!rader.length && !gamleBlendinger.length) {
+  const harTitler = data.titler && typeof data.titler === "object";
+  if (!rader.length && !gamleBlendinger.length && !harTitler) {
     return melding("meldingArkiv", "Fant verken smakinger eller blendinger i dataene.", "feil");
   }
 
@@ -1759,6 +1789,9 @@ async function importer(e, feltId) {
   try {
     if (data.medlemmer && typeof data.medlemmer === "object") {
       await setDoc(doc(db, "arkiv", "initialer"), data.medlemmer, { merge: true });
+    }
+    if (data.titler && typeof data.titler === "object") {
+      await setDoc(doc(db, "arkiv", "titler"), data.titler, { merge: true });
     }
     for (const r of rader) {
       if (!r.cognac || !r.dato || !r.klassifisering) continue;
@@ -1787,7 +1820,8 @@ async function importer(e, feltId) {
     e.target.hidden = true;
     melding("meldingArkiv", [
       rader.length ? rader.length + " smakinger" : "",
-      gamle.length ? gamle.length + " blendinger" : ""
+      gamle.length ? gamle.length + " blendinger" : "",
+      harTitler ? Object.keys(data.titler).length + " titler" : ""
     ].filter(Boolean).join(" og ") + " er importert.", "ok");
     tegnArkiv();
   } catch (err) {
