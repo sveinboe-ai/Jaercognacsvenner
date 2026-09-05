@@ -133,6 +133,30 @@
   .kontakt a{color:var(--dempet);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .kontakt a:hover{color:var(--kobber)}
   .kontakt .mobil{font-variant-numeric:tabular-nums}
+  select{
+    width:100%;padding:.45rem 0;font:inherit;color:var(--blekk);
+    background:none;border:0;border-bottom:1px solid var(--linje);border-radius:0;
+  }
+  select:focus{outline:none;border-bottom-color:var(--kobber);box-shadow:0 1px 0 var(--kobber)}
+
+  .rad{display:flex;align-items:baseline;gap:.9rem;padding:.7rem 0;border-bottom:1px solid var(--linje)}
+  .rad:last-child{border-bottom:0}
+  .rad .venstre{flex:1;min-width:0}
+  .rad .tittel{font-weight:500;line-height:1.35}
+  .rad .under{font-size:.85rem;color:var(--dempet)}
+  .tall{font-variant-numeric:tabular-nums;font-size:1.1rem;white-space:nowrap}
+  .tall.svak{font-size:.9rem;color:var(--dempet)}
+  .glassmerke{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:1.5rem;height:1.5rem;flex-shrink:0;margin-right:.1rem;
+    border:1px solid var(--linje);border-radius:50%;
+    font-size:.75rem;color:var(--dempet);
+  }
+  .rett{color:var(--gronn)}
+  .bom{color:var(--dempet)}
+  .valgbar{cursor:pointer}
+  .valgbar:hover .tittel{color:var(--kobber)}
+  .detalj{margin:1.25rem 0 0;padding:1.1rem 0 0;border-top:2px solid var(--kobber)}
   .klubb{margin:.2rem 0 0;font-size:.85rem;color:var(--kobber)}
   .antall{font-family:Karla,sans-serif;font-size:.9rem;color:var(--dempet)}
 
@@ -330,7 +354,50 @@
 
       <div class="boks" id="panelKlasse" hidden>
         <h3 id="klasseTittel"></h3>
-        <p class="hjelp" style="margin:0">Her kommer smakingene og poengene for denne klassen. Vi bygger den delen etter hvert.</p>
+        <div id="klasseInnhold"></div>
+      </div>
+
+      <div class="boks" id="panelBlending" hidden>
+        <h3>Blending</h3>
+        <p class="hjelp">Tre glass fra samme klasse, A til C fra venstre. Du gjetter hvilken cognac som står hvor, og gir hver av dem en karakter fra 1,00 til 6,00.</p>
+
+        <div id="meldingBlending" class="melding" hidden></div>
+
+        <div id="adminNyBlending" hidden>
+          <button class="knapp liten" id="knappNyBlending" type="button">Ny blending</button>
+          <form id="skjemaBlending" hidden style="margin-top:1.25rem">
+            <div class="felt">
+              <label for="bDato">Dato</label>
+              <input id="bDato" type="date" required>
+            </div>
+            <div class="felt">
+              <label for="bKlasse">Klassifisering</label>
+              <select id="bKlasse">
+                <option value="VS">VS</option>
+                <option value="VSOP">VSOP</option>
+                <option value="XO" selected>XO</option>
+              </select>
+            </div>
+            <div class="felt">
+              <label for="bA">Glass A</label>
+              <input id="bA" placeholder="Cognac i glass A" required>
+            </div>
+            <div class="felt">
+              <label for="bB">Glass B</label>
+              <input id="bB" placeholder="Cognac i glass B" required>
+            </div>
+            <div class="felt">
+              <label for="bC">Glass C</label>
+              <input id="bC" placeholder="Cognac i glass C" required>
+            </div>
+            <button class="knapp" type="submit">Lagre blending</button>
+          </form>
+        </div>
+
+        <div id="listeBlendinger" style="margin-top:1.5rem"></div>
+
+        <h3 style="margin-top:2.5rem">Treffprosent</h3>
+        <div id="listeRangering"></div>
       </div>
     </section>
   </main>
@@ -349,7 +416,7 @@ import {
   onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  getFirestore, doc, getDoc, setDoc, collection, getDocs,
+  getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, collection, getDocs,
   query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -404,11 +471,13 @@ function feiltekst(e) {
 
 /* ---------- Meny ---------- */
 function apnePanel(navn) {
-  const erKlasse = !["profil", "medlemmer"].includes(navn);
+  const erKlasse = ["VS", "VSOP", "XO", "Cocktail"].includes(navn);
   $("panelProfil").hidden = navn !== "profil";
   $("panelMedlemmer").hidden = navn !== "medlemmer";
   $("panelKlasse").hidden = !erKlasse;
-  if (erKlasse) $("klasseTittel").textContent = navn;
+  $("panelBlending").hidden = navn !== "Blending";
+  if (erKlasse) { $("klasseTittel").textContent = navn; tegnKlasse(navn); }
+  if (navn === "Blending") tegnBlending();
   document.querySelectorAll(".menyvalg").forEach(b => {
     b.setAttribute("aria-current", String(b.dataset.panel === navn));
   });
@@ -630,10 +699,12 @@ async function tegnMedlem(bruker) {
   const snap = await getDoc(doc(db, "medlemmer", bruker.uid));
   if (!snap.exists()) { vis("visFullfor"); return; }
   const meg = snap.data();
+  erAdmin = meg.rolle === "admin";
+  minUid = bruker.uid;
 
   vis("visMedlem");
   menyTilgjengelig(true);
-  if ($("panelProfil").hidden && $("panelMedlemmer").hidden && $("panelKlasse").hidden) apnePanel("profil");
+  if ($("panelProfil").hidden && $("panelMedlemmer").hidden && $("panelKlasse").hidden && $("panelBlending").hidden) apnePanel("profil");
   $("hilsen").textContent = "Hei, " + meg.navn.split(" ")[0];
   $("minInfo").textContent = penMobil(meg.mobil);
   $("minEpost").textContent = meg.epost;
@@ -657,6 +728,12 @@ async function tegnMedlem(bruker) {
     }
   }
   treff.forEach(d => alle.push({ id: d.id, ...d.data() }));
+  medlemmer = alle;
+  try {
+    await lastBlendinger();
+  } catch (err) {
+    blendinger = [];
+  }
 
   const boks = $("listeAktive");
   boks.textContent = "";
@@ -669,6 +746,393 @@ async function tegnMedlem(bruker) {
     alle.forEach(m => boks.append(kort(m)));
   }
   $("tittelMedlemmer").innerHTML = "Medlemmer <span class=\"antall\">(" + alle.length + ")</span>";
+}
+
+/* ---------- Blending ---------- */
+// En blending er tre glass, A til C, fra samme klasse. Fasiten sier hvilken
+// cognac som sto hvor. Hvert medlem gjetter og gir karakter fra 1,00 til 6,00.
+// Riktige gjett kan bare bli 0, 1 eller 3 – to rette er umulig når tre parres.
+
+let blendinger = [];
+let medlemmer = [];
+let erAdmin = false;
+let apenBlending = null;
+let minUid = null;
+
+const GLASS = ["A", "B", "C"];
+
+function tall(x, des) {
+  return x.toFixed(des === undefined ? 2 : des).replace(".", ",");
+}
+
+function norskDato(iso) {
+  if (!iso) return "";
+  const d = iso.split("-");
+  return d.length === 3 ? d[2] + "." + d[1] + "." + d[0] : iso;
+}
+
+function navnPa(uid) {
+  const m = medlemmer.find(x => x.id === uid);
+  return m ? m.navn : "Ukjent medlem";
+}
+
+async function lastBlendinger() {
+  blendinger = [];
+  const treff = await getDocs(collection(db, "blendinger"));
+  treff.forEach(d => blendinger.push({ id: d.id, ...d.data() }));
+  blendinger.sort((a, b) => (b.dato || "").localeCompare(a.dato || ""));
+}
+
+function rettePoeng(b, uid) {
+  const svar = (b.svar || {})[uid];
+  if (!svar) return null;
+  let rette = 0;
+  GLASS.forEach(g => {
+    if (svar[g] && svar[g].gjett && svar[g].gjett === b.fasit[g]) rette++;
+  });
+  return rette;
+}
+
+function tomtSvar(tekst) {
+  const p = document.createElement("p");
+  p.className = "hjelp";
+  p.style.margin = "0";
+  p.textContent = tekst;
+  return p;
+}
+
+function radElement(tittel, under, verdi, svakVerdi) {
+  const rad = document.createElement("div");
+  rad.className = "rad";
+  const venstre = document.createElement("div");
+  venstre.className = "venstre";
+  const t = document.createElement("div");
+  t.className = "tittel";
+  t.textContent = tittel;
+  venstre.append(t);
+  if (under) {
+    const u = document.createElement("div");
+    u.className = "under";
+    u.textContent = under;
+    venstre.append(u);
+  }
+  rad.append(venstre);
+  if (verdi) {
+    const v = document.createElement("div");
+    v.className = "tall" + (svakVerdi ? " svak" : "");
+    v.textContent = verdi;
+    rad.append(v);
+  }
+  return rad;
+}
+
+/* ---------- Panelet for Blending ---------- */
+function tegnBlending() {
+  $("adminNyBlending").hidden = !erAdmin;
+  const liste = $("listeBlendinger");
+  liste.textContent = "";
+
+  if (!blendinger.length) {
+    liste.append(tomtSvar(erAdmin
+      ? "Ingen blendinger lagt inn ennå. Trykk «Ny blending» for å legge inn den første."
+      : "Ingen blendinger lagt inn ennå."));
+  } else {
+    blendinger.forEach(b => {
+      const antall = Object.keys(b.svar || {}).length;
+      const rad = radElement(
+        norskDato(b.dato) + " · " + b.klassifisering,
+        GLASS.map(g => g + ": " + b.fasit[g]).join("   "),
+        antall + (antall === 1 ? " svar" : " svar"),
+        true
+      );
+      rad.classList.add("valgbar");
+      rad.addEventListener("click", () => {
+        apenBlending = apenBlending === b.id ? null : b.id;
+        tegnBlending();
+      });
+      liste.append(rad);
+      if (apenBlending === b.id) liste.append(blendingDetalj(b));
+    });
+  }
+
+  tegnRangering();
+}
+
+function blendingDetalj(b) {
+  const boks = document.createElement("div");
+  boks.className = "detalj";
+
+  const deltakere = Object.keys(b.svar || {});
+  if (!deltakere.length) {
+    boks.append(tomtSvar("Ingen resultater lagt inn for denne blendingen ennå."));
+  } else {
+    deltakere
+      .map(uid => ({ uid, rette: rettePoeng(b, uid) }))
+      .sort((x, y) => y.rette - x.rette || navnPa(x.uid).localeCompare(navnPa(y.uid)))
+      .forEach(({ uid, rette }) => {
+        const svar = b.svar[uid];
+        const under = GLASS.map(g => {
+          const s = svar[g] || {};
+          const merke = s.gjett === b.fasit[g] ? "✓" : "✗";
+          return g + " " + merke + " " + (s.gjett || "–") + " " + tall(s.poeng || 0);
+        }).join("    ");
+        const rad = radElement(navnPa(uid), under, rette + "/3");
+        if (rette === 3) rad.querySelector(".tall").classList.add("rett");
+        boks.append(rad);
+      });
+  }
+
+  if (erAdmin) {
+    boks.append(svarSkjema(b, null));
+  } else if (!(b.svar || {})[minUid]) {
+    boks.append(svarSkjema(b, minUid));
+  } else {
+    const laast = document.createElement("p");
+    laast.className = "hjelp";
+    laast.style.marginTop = "1.25rem";
+    laast.textContent = "Svaret ditt er lagret og kan ikke endres. Trenger du å rette noe, ta kontakt med admin.";
+    boks.append(laast);
+  }
+  return boks;
+}
+
+/* ---------- Admin: legge inn ett medlems svar ---------- */
+function svarSkjema(b, fastUid) {
+  const form = document.createElement("form");
+  form.style.marginTop = "1.5rem";
+
+  const tittel = document.createElement("h3");
+  tittel.textContent = fastUid ? "Ditt svar" : "Legg inn svar";
+  form.append(tittel);
+
+  let velgMedlem = null;
+  if (fastUid) {
+    const info = document.createElement("p");
+    info.className = "hjelp";
+    info.textContent = "Svaret kan ikke endres etter at du har lagret det.";
+    form.append(info);
+  } else {
+    const feltMedlem = document.createElement("div");
+    feltMedlem.className = "felt";
+    const merkeMedlem = document.createElement("label");
+    merkeMedlem.textContent = "Medlem";
+    velgMedlem = document.createElement("select");
+    medlemmer.forEach(m => {
+      const o = document.createElement("option");
+      o.value = m.id;
+      o.textContent = m.navn;
+      velgMedlem.append(o);
+    });
+    feltMedlem.append(merkeMedlem, velgMedlem);
+    form.append(feltMedlem);
+  }
+
+  const kandidater = GLASS.map(g => b.fasit[g]);
+  const felter = {};
+
+  GLASS.forEach(g => {
+    const felt = document.createElement("div");
+    felt.className = "felt";
+
+    const merke = document.createElement("label");
+    merke.textContent = "Glass " + g;
+    felt.append(merke);
+
+    const gjett = document.createElement("select");
+    const tom = document.createElement("option");
+    tom.value = "";
+    tom.textContent = "Velg cognac";
+    gjett.append(tom);
+    kandidater.forEach(navn => {
+      const o = document.createElement("option");
+      o.value = navn;
+      o.textContent = navn;
+      gjett.append(o);
+    });
+
+    const poeng = document.createElement("input");
+    poeng.type = "number";
+    poeng.min = "1";
+    poeng.max = "6";
+    poeng.step = "0.01";
+    poeng.placeholder = "Karakter 1,00–6,00";
+
+    felt.append(gjett, poeng);
+    felter[g] = { gjett, poeng };
+    form.append(felt);
+  });
+
+  const lagre = document.createElement("button");
+  lagre.className = "knapp";
+  lagre.type = "submit";
+  lagre.textContent = "Lagre svar";
+  form.append(lagre);
+
+  // Fyll ut på nytt hvis medlemmet allerede har svart
+  const fyll = () => {
+    const s = (b.svar || {})[velgMedlem ? velgMedlem.value : fastUid] || {};
+    GLASS.forEach(g => {
+      felter[g].gjett.value = (s[g] && s[g].gjett) || "";
+      felter[g].poeng.value = s[g] && s[g].poeng ? s[g].poeng : "";
+    });
+  };
+  if (velgMedlem) velgMedlem.addEventListener("change", fyll);
+  fyll();
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const uid = velgMedlem ? velgMedlem.value : fastUid;
+    const svar = {};
+    for (const g of GLASS) {
+      const gjett = felter[g].gjett.value;
+      const poeng = parseFloat(felter[g].poeng.value);
+      if (!gjett) return melding("meldingBlending", "Velg en cognac for glass " + g + ".", "feil");
+      if (!(poeng >= 1 && poeng <= 6)) return melding("meldingBlending", "Karakteren for glass " + g + " må være mellom 1,00 og 6,00.", "feil");
+      svar[g] = { gjett, poeng };
+    }
+    const brukte = GLASS.map(g => svar[g].gjett);
+    if (new Set(brukte).size !== 3) {
+      return melding("meldingBlending", "Hver cognac kan bare brukes én gang. To rette er umulig.", "feil");
+    }
+    lagre.disabled = true;
+    try {
+      await updateDoc(doc(db, "blendinger", b.id), { ["svar." + uid]: svar });
+      b.svar = b.svar || {};
+      b.svar[uid] = svar;
+      melding("meldingBlending", fastUid
+        ? "Svaret ditt er lagret."
+        : "Svaret til " + navnPa(uid) + " er lagret.", "ok");
+      tegnBlending();
+    } catch (err) {
+      melding("meldingBlending", feiltekst(err), "feil");
+    } finally {
+      lagre.disabled = false;
+    }
+  });
+
+  return form;
+}
+
+/* ---------- Ny blending ---------- */
+$("knappNyBlending").addEventListener("click", () => {
+  const form = $("skjemaBlending");
+  form.hidden = !form.hidden;
+  if (!form.hidden && !$("bDato").value) {
+    $("bDato").value = new Date().toISOString().slice(0, 10);
+  }
+});
+
+$("skjemaBlending").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const dato = $("bDato").value;
+  const klassifisering = $("bKlasse").value;
+  const fasit = { A: $("bA").value.trim(), B: $("bB").value.trim(), C: $("bC").value.trim() };
+  if (!dato) return melding("meldingBlending", "Velg en dato.", "feil");
+  if (!fasit.A || !fasit.B || !fasit.C) return melding("meldingBlending", "Fyll inn alle tre glassene.", "feil");
+  if (new Set([fasit.A, fasit.B, fasit.C]).size !== 3) {
+    return melding("meldingBlending", "De tre cognacene må være forskjellige.", "feil");
+  }
+  const knapp = e.target.querySelector("button");
+  knapp.disabled = true;
+  try {
+    const ny = await addDoc(collection(db, "blendinger"), {
+      dato, klassifisering, fasit, svar: {}, opprettet: serverTimestamp()
+    });
+    blendinger.unshift({ id: ny.id, dato, klassifisering, fasit, svar: {} });
+    e.target.reset();
+    e.target.hidden = true;
+    apenBlending = ny.id;
+    melding("meldingBlending", "Blendingen er lagret. Legg inn svarene under.", "ok");
+    tegnBlending();
+  } catch (err) {
+    melding("meldingBlending", feiltekst(err), "feil");
+  } finally {
+    knapp.disabled = false;
+  }
+});
+
+/* ---------- Treffprosent over alle blendinger ---------- */
+function tegnRangering() {
+  const boks = $("listeRangering");
+  boks.textContent = "";
+  const sum = {};
+  blendinger.forEach(b => {
+    Object.keys(b.svar || {}).forEach(uid => {
+      if (!sum[uid]) sum[uid] = { rette: 0, glass: 0, runder: 0 };
+      sum[uid].rette += rettePoeng(b, uid);
+      sum[uid].glass += 3;
+      sum[uid].runder += 1;
+    });
+  });
+  const alle = Object.keys(sum);
+  if (!alle.length) {
+    boks.append(tomtSvar("Treffprosenten regnes ut så snart det ligger svar inne."));
+    return;
+  }
+  alle
+    .map(uid => ({ uid, ...sum[uid], prosent: (sum[uid].rette / sum[uid].glass) * 100 }))
+    .sort((a, b) => b.prosent - a.prosent || b.rette - a.rette)
+    .forEach(r => {
+      boks.append(radElement(
+        navnPa(r.uid),
+        r.rette + " rette av " + r.glass + " glass, " + r.runder + (r.runder === 1 ? " blending" : " blendinger"),
+        tall(r.prosent, 0) + " %"
+      ));
+    });
+}
+
+/* ---------- Klassetabellene: VS, VSOP, XO ---------- */
+function tegnKlasse(klasse) {
+  const boks = $("klasseInnhold");
+  boks.textContent = "";
+
+  if (klasse === "Cocktail") {
+    boks.append(tomtSvar("Cocktail smakes ikke som blending, så her ligger ingen karakterer ennå."));
+    return;
+  }
+
+  const samlet = {};
+  blendinger
+    .filter(b => b.klassifisering === klasse)
+    .forEach(b => {
+      GLASS.forEach(g => {
+        const navn = b.fasit[g];
+        if (!samlet[navn]) samlet[navn] = { poeng: [], ganger: 0 };
+        samlet[navn].ganger += 1;
+        Object.keys(b.svar || {}).forEach(uid => {
+          const s = b.svar[uid][g];
+          if (s && typeof s.poeng === "number") samlet[navn].poeng.push(s.poeng);
+        });
+      });
+    });
+
+  const navn = Object.keys(samlet);
+  if (!navn.length) {
+    boks.append(tomtSvar("Ingen " + klasse + " er smakt ennå. Karakterene kommer hit fra blendingene."));
+    return;
+  }
+
+  const innledning = document.createElement("p");
+  innledning.className = "hjelp";
+  innledning.textContent = "Snittkarakter fra blendingene, høyeste først.";
+  boks.append(innledning);
+
+  navn
+    .map(n => {
+      const d = samlet[n];
+      const snitt = d.poeng.length ? d.poeng.reduce((a, b) => a + b, 0) / d.poeng.length : null;
+      return { navn: n, snitt, antall: d.poeng.length, ganger: d.ganger };
+    })
+    .sort((a, b) => (b.snitt || 0) - (a.snitt || 0))
+    .forEach(c => {
+      boks.append(radElement(
+        c.navn,
+        c.antall
+          ? c.antall + (c.antall === 1 ? " karakter" : " karakterer") + ", smakt " + c.ganger + (c.ganger === 1 ? " gang" : " ganger")
+          : "Ingen karakterer lagt inn",
+        c.snitt === null ? "–" : tall(c.snitt)
+      ));
+    });
 }
 
 /* ---------- Ruting ---------- */
