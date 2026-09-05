@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.13 – 5. september 2026 -->
+     Versjon 1.14 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -253,6 +253,7 @@
     <button class="menyvalg tekstvalg" type="button" data-panel="profil" hidden>Min profil</button>
     <button class="menyvalg tekstvalg" type="button" data-panel="medlemmer" hidden>Medlemmer</button>
     <button class="menyvalg tekstvalg" type="button" data-panel="arkiv" hidden>Arkiv</button>
+    <button class="menyvalg tekstvalg" type="button" data-panel="ansiennitet" hidden>Ansiennitet</button>
   </nav>
 
   <header>
@@ -432,6 +433,12 @@
         <div id="listeAktive"></div>
       </div>
 
+      <div class="boks" id="panelAnsiennitet" hidden>
+        <h3>Ansiennitet</h3>
+        <p class="hjelp">Hvor lenge hver enkelt har vært med, regnet fram til i dag. Der startdato ikke er lagt inn, brukes den første registreringen i basen.</p>
+        <div id="listeAnsiennitet" style="margin-top:1.5rem"></div>
+      </div>
+
       <div class="boks" id="panelKlasse" hidden>
         <h3 id="klasseTittel"></h3>
         <div id="klasseInnhold"></div>
@@ -443,7 +450,6 @@
         <div class="sortering" style="margin-top:.5rem">
           <button class="arkivfane" type="button" data-del="smakinger" aria-current="true">Smakinger</button>
           <button class="arkivfane" type="button" data-del="blending">Blending</button>
-          <button class="arkivfane" type="button" data-del="ansiennitet">Ansiennitet</button>
         </div>
 
         <div id="meldingArkiv" class="melding" hidden style="margin-top:1.5rem"></div>
@@ -468,11 +474,6 @@
             <button class="sortvalg" type="button" data-sort="snitt">Beste først</button>
           </div>
           <div id="listeArkiv" style="margin-top:1rem"></div>
-        </div>
-
-        <div id="arkivAnsiennitet" hidden>
-          <p class="hjelp" style="margin-top:1.5rem">Hvor lenge hver enkelt har vært med, regnet fram til i dag. Der startdato ikke er lagt inn, brukes den første registreringen i basen.</p>
-          <div id="listeAnsiennitet" style="margin-top:1.5rem"></div>
         </div>
 
         <div id="arkivBlending" hidden>
@@ -551,7 +552,7 @@
 
   <footer class="bunn">
     Spørsmål om medlemskap eller registrerte opplysninger rettes til admin. Du kan når som helst be om å bli slettet fra registeret.
-    <span class="versjon">Versjon 1.13</span>
+    <span class="versjon">Versjon 1.14</span>
   </footer>
 </div>
 
@@ -623,11 +624,13 @@ function apnePanel(navn) {
   $("panelProfil").hidden = navn !== "profil";
   $("panelMedlemmer").hidden = navn !== "medlemmer";
   $("panelArkiv").hidden = navn !== "arkiv";
+  $("panelAnsiennitet").hidden = navn !== "ansiennitet";
   $("panelKlasse").hidden = !erKlasse;
   $("panelBlending").hidden = navn !== "Blending";
   if (erKlasse) { $("klasseTittel").textContent = navn; tegnKlasse(navn); }
   if (navn === "Blending") tegnBlending();
   if (navn === "arkiv") tegnArkiv();
+  if (navn === "ansiennitet") tegnAnsiennitet();
   document.querySelectorAll(".menyvalg").forEach(b => {
     b.setAttribute("aria-current", String(b.dataset.panel === navn));
   });
@@ -638,7 +641,7 @@ function menyTilgjengelig(paa) {
   document.querySelectorAll(".menyvalg").forEach(b => {
     const personlig = ["profil", "medlemmer"].includes(b.dataset.panel);
     if (personlig) b.hidden = !paa;
-    else if (b.dataset.panel === "arkiv") b.hidden = !(paa && erJcc);
+    else if (b.dataset.panel === "arkiv" || b.dataset.panel === "ansiennitet") b.hidden = !(paa && erJcc);
     else if (b.dataset.panel === "Blending") {
       b.hidden = !(paa && erJcc);
       b.disabled = !(paa && erJcc);
@@ -932,7 +935,7 @@ async function tegnMedlem(bruker) {
 
   vis("visMedlem");
   menyTilgjengelig(true);
-  if ($("panelProfil").hidden && $("panelMedlemmer").hidden && $("panelKlasse").hidden && $("panelBlending").hidden && $("panelArkiv").hidden) apnePanel("profil");
+  if ($("panelProfil").hidden && $("panelMedlemmer").hidden && $("panelKlasse").hidden && $("panelBlending").hidden && $("panelArkiv").hidden && $("panelAnsiennitet").hidden) apnePanel("profil");
   $("hilsen").textContent = "Hei, " + meg.navn.split(" ")[0];
   $("minInfo").textContent = penMobil(meg.mobil);
   $("minEpost").textContent = meg.epost;
@@ -1725,13 +1728,11 @@ document.querySelectorAll(".arkivfane").forEach(b => {
     const del = b.dataset.del;
     $("arkivSmakinger").hidden = del !== "smakinger";
     $("arkivBlending").hidden = del !== "blending";
-    $("arkivAnsiennitet").hidden = del !== "ansiennitet";
     document.querySelectorAll(".arkivfane").forEach(x => {
       x.setAttribute("aria-current", String(x.dataset.del === del));
     });
     melding("meldingArkiv", "");
     if (del === "blending") tegnBlendingArkiv();
-    if (del === "ansiennitet") tegnAnsiennitet();
   });
 });
 
@@ -1891,7 +1892,8 @@ function tegnAnsiennitet() {
       const dato = oppgitt || funnet[init];
       return { init, dato, oppgitt: Boolean(oppgitt), ar: arSiden(dato) };
     })
-    .sort((a, b) => (a.dato || "").localeCompare(b.dato || ""));
+    .sort((a, b) => (a.dato || "").localeCompare(b.dato || "")
+      || (arkivNavn[a.init] || a.init).localeCompare(arkivNavn[b.init] || b.init, "nb"));
 
   if (!rader.length) {
     boks.append(tomtSvar("Ingen aktive medlemmer å regne ansiennitet av."));
