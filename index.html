@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.21 – 5. september 2026 -->
+     Versjon 1.22 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -561,7 +561,7 @@
 
   <footer class="bunn">
     Spørsmål om medlemskap eller registrerte opplysninger rettes til admin. Du kan når som helst be om å bli slettet fra registeret.
-    <span class="versjon">Versjon 1.21</span>
+    <span class="versjon">Versjon 1.22</span>
   </footer>
 </div>
 
@@ -574,7 +574,7 @@ import {
   onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, collection, getDocs,
+  getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, deleteField, collection, getDocs,
   query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -2001,7 +2001,30 @@ function tegnRediger() {
         lagre.disabled = false;
       }
     });
-    rad.append(lagre);
+    const fjern = document.createElement("button");
+    fjern.className = "knapp stille liten";
+    fjern.type = "button";
+    fjern.style.marginLeft = ".5rem";
+    fjern.textContent = "Fjern";
+    fjern.addEventListener("click", async () => {
+      if (!window.confirm("Fjerne " + (arkivNavn[init] || init) + " (" + init +
+        ") fra navn, datoer og titler? Karakterene og blendingene blir stående.")) return;
+      fjern.disabled = true;
+      try {
+        for (const dok of ["initialer", "start", "titler", "slutt", "tillegg"]) {
+          await setDoc(doc(db, "arkiv", dok), { [init]: deleteField() }, { merge: true });
+        }
+        await lastArkivDetaljer();
+        tegnRediger();
+        tegnAnsiennitet();
+        melding("meldingAnsiennitet", init + " er fjernet fra arkivopplysningene.", "ok");
+      } catch (err) {
+        melding("meldingAnsiennitet", feiltekst(err), "feil");
+        fjern.disabled = false;
+      }
+    });
+
+    rad.append(lagre, fjern);
     boks.append(rad);
   });
 }
