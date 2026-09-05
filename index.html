@@ -529,7 +529,10 @@ function menyTilgjengelig(paa) {
   document.querySelectorAll(".menyvalg").forEach(b => {
     const personlig = ["profil", "medlemmer"].includes(b.dataset.panel);
     if (personlig) b.hidden = !paa;
-    else if (b.dataset.panel === "Blending") b.hidden = !(paa && erJcc);
+    else if (b.dataset.panel === "Blending") {
+      b.hidden = !(paa && erJcc);
+      b.disabled = !(paa && erJcc);
+    }
     else b.disabled = !paa;
     if (!paa) b.removeAttribute("aria-current");
   });
