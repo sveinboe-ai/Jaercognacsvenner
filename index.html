@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.10 – 5. september 2026 -->
+     Versjon 1.11 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -443,6 +443,7 @@
         <div class="sortering" style="margin-top:.5rem">
           <button class="arkivfane" type="button" data-del="smakinger" aria-current="true">Smakinger</button>
           <button class="arkivfane" type="button" data-del="blending">Blending</button>
+          <button class="arkivfane" type="button" data-del="ansiennitet">Ansiennitet</button>
         </div>
 
         <div id="meldingArkiv" class="melding" hidden style="margin-top:1.5rem"></div>
@@ -467,6 +468,11 @@
             <button class="sortvalg" type="button" data-sort="snitt">Beste først</button>
           </div>
           <div id="listeArkiv" style="margin-top:1rem"></div>
+        </div>
+
+        <div id="arkivAnsiennitet" hidden>
+          <p class="hjelp" style="margin-top:1.5rem">Hvor lenge hver enkelt har vært med, regnet fram til i dag. Der startdato ikke er lagt inn, brukes den første registreringen i basen.</p>
+          <div id="listeAnsiennitet" style="margin-top:1.5rem"></div>
         </div>
 
         <div id="arkivBlending" hidden>
@@ -545,7 +551,7 @@
 
   <footer class="bunn">
     Spørsmål om medlemskap eller registrerte opplysninger rettes til admin. Du kan når som helst be om å bli slettet fra registeret.
-    <span class="versjon">Versjon 1.10</span>
+    <span class="versjon">Versjon 1.11</span>
   </footer>
 </div>
 
@@ -1651,6 +1657,7 @@ let historikk = [];
 let arkivNavn = {};
 let arkivTitler = {};
 let arkivTillegg = {};
+let arkivStart = {};
 
 async function lastArkiv() {
   historikk = [];
@@ -1674,6 +1681,12 @@ async function lastArkiv() {
     arkivTillegg = t.exists() ? t.data() : {};
   } catch (_) {
     arkivTillegg = {};
+  }
+  try {
+    const t = await getDoc(doc(db, "arkiv", "start"));
+    arkivStart = t.exists() ? t.data() : {};
+  } catch (_) {
+    arkivStart = {};
   }
 }
 
@@ -1705,11 +1718,13 @@ document.querySelectorAll(".arkivfane").forEach(b => {
     const del = b.dataset.del;
     $("arkivSmakinger").hidden = del !== "smakinger";
     $("arkivBlending").hidden = del !== "blending";
+    $("arkivAnsiennitet").hidden = del !== "ansiennitet";
     document.querySelectorAll(".arkivfane").forEach(x => {
       x.setAttribute("aria-current", String(x.dataset.del === del));
     });
     melding("meldingArkiv", "");
     if (del === "blending") tegnBlendingArkiv();
+    if (del === "ansiennitet") tegnAnsiennitet();
   });
 });
 
@@ -1821,6 +1836,53 @@ document.querySelectorAll(".sortvalg").forEach(b => {
   });
 });
 
+/* ---------- Ansiennitet ---------- */
+// Regnes fram til i dag, så tallet stiger av seg selv ved hvert årsskifte.
+function arSiden(iso) {
+  const start = new Date(iso);
+  const naa = new Date();
+  let ar = naa.getFullYear() - start.getFullYear();
+  const passert = naa.getMonth() > start.getMonth()
+    || (naa.getMonth() === start.getMonth() && naa.getDate() >= start.getDate());
+  if (!passert) ar -= 1;
+  return Math.max(ar, 0);
+}
+
+function tegnAnsiennitet() {
+  const boks = $("listeAnsiennitet");
+  boks.textContent = "";
+
+  // Alle initialer som finnes i basen, uansett kilde
+  const funnet = {};
+  const tidligst = (init, dato) => {
+    if (!funnet[init] || dato < funnet[init]) funnet[init] = dato;
+  };
+  historikk.forEach(h => Object.keys(h.poeng || {}).forEach(i => tidligst(i, h.dato)));
+  blendingArkiv.forEach(b => Object.keys(b.resultat || {}).forEach(i => tidligst(i, b.dato)));
+  Object.keys(arkivStart).forEach(i => { if (!funnet[i]) funnet[i] = arkivStart[i]; });
+
+  const alle = Object.keys(funnet);
+  if (!alle.length) {
+    boks.append(tomtSvar("Ingen data å regne ansiennitet av ennå."));
+    return;
+  }
+
+  alle
+    .map(init => {
+      const oppgitt = arkivStart[init];
+      const dato = oppgitt || funnet[init];
+      return { init, dato, oppgitt: Boolean(oppgitt), ar: arSiden(dato) };
+    })
+    .sort((a, b) => (a.dato || "").localeCompare(b.dato || ""))
+    .forEach(r => {
+      boks.append(settUtnevnte(radElement(
+        arkivNavnFor(r.init),
+        (r.oppgitt ? "Medlem siden " : "Første registrering ") + norskDato(r.dato),
+        r.ar + (r.ar === 1 ? " år" : " år")
+      ), r.init));
+    });
+}
+
 /* ---------- Import ---------- */
 $("knappImport").addEventListener("click", () => {
   const form = $("skjemaImport");
@@ -1865,7 +1927,8 @@ async function importer(e, feltId) {
   const harTitler = data.titler && typeof data.titler === "object";
   const harTillegg = data.tillegg && typeof data.tillegg === "object";
   const harNavn = data.medlemmer && typeof data.medlemmer === "object";
-  if (!rader.length && !gamleBlendinger.length && !harTitler && !harTillegg && !harNavn) {
+  const harStart = data.start && typeof data.start === "object";
+  if (!rader.length && !gamleBlendinger.length && !harTitler && !harTillegg && !harNavn && !harStart) {
     return melding("meldingArkiv", "Fant verken smakinger eller blendinger i dataene.", "feil");
   }
 
@@ -1880,6 +1943,9 @@ async function importer(e, feltId) {
     }
     if (data.tillegg && typeof data.tillegg === "object") {
       await setDoc(doc(db, "arkiv", "tillegg"), data.tillegg, { merge: true });
+    }
+    if (data.start && typeof data.start === "object") {
+      await setDoc(doc(db, "arkiv", "start"), data.start, { merge: true });
     }
     for (const r of rader) {
       if (!r.cognac || !r.dato || !r.klassifisering) continue;
@@ -1911,7 +1977,8 @@ async function importer(e, feltId) {
       gamle.length ? gamle.length + " blendinger" : "",
       harTitler ? Object.keys(data.titler).length + " titler" : "",
       harTillegg ? Object.keys(data.tillegg).length + " tillegg" : "",
-      harNavn ? Object.keys(data.medlemmer).length + " navn" : ""
+      harNavn ? Object.keys(data.medlemmer).length + " navn" : "",
+      harStart ? Object.keys(data.start).length + " startdatoer" : ""
     ].filter(Boolean).join(" og ") + " er importert.", "ok");
     tegnArkiv();
   } catch (err) {
