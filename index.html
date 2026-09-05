@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.0 – 5. september 2026 -->
+     Versjon 1.1 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -157,6 +157,12 @@
   }
   textarea:focus{outline:none;border-color:var(--kobber)}
   .sortering{display:flex;gap:1.25rem;margin-top:1.5rem}
+  .arkivfane{
+    font:inherit;font-size:.95rem;background:none;border:0;padding:.2rem 0;
+    color:var(--dempet);cursor:pointer;border-bottom:2px solid transparent;
+  }
+  .arkivfane[aria-current="true"]{color:var(--blekk);border-bottom-color:var(--kobber)}
+  .arkivfane:focus-visible{outline:2px solid var(--kobber);outline-offset:3px}
   .sortvalg{
     font:inherit;font-size:.88rem;background:none;border:0;padding:.2rem 0;
     color:var(--dempet);cursor:pointer;border-bottom:2px solid transparent;
@@ -417,27 +423,56 @@
 
       <div class="boks" id="panelArkiv" hidden>
         <h3>Arkiv</h3>
-        <p class="hjelp">Smakinger fra den gamle poengbasen. Poengene hører til initialene som ble brukt den gangen, og de teller med i snittet under VS, VSOP og XO.</p>
 
-        <div id="meldingArkiv" class="melding" hidden></div>
-
-        <div id="adminImport" hidden>
-          <button class="knapp stille liten" id="knappImport" type="button">Importer fra poengbasen</button>
-          <form id="skjemaImport" hidden style="margin-top:1.25rem">
-            <div class="felt">
-              <label for="importData">Data som JSON</label>
-              <textarea id="importData" rows="8" placeholder='{"medlemmer": {"ODH": "Odd Jan Håland"}, "smakinger": [...]}'></textarea>
-              <p class="hjelp">Samme smaking kan importeres flere ganger uten å bli liggende dobbelt.</p>
-            </div>
-            <button class="knapp" type="submit">Importer</button>
-          </form>
+        <div class="sortering" style="margin-top:.5rem">
+          <button class="arkivfane" type="button" data-del="smakinger" aria-current="true">Smakinger</button>
+          <button class="arkivfane" type="button" data-del="blending">Blending</button>
         </div>
 
-        <div class="sortering">
-          <button class="sortvalg" type="button" data-sort="dato" aria-current="true">Nyeste først</button>
-          <button class="sortvalg" type="button" data-sort="snitt">Beste først</button>
+        <div id="meldingArkiv" class="melding" hidden style="margin-top:1.5rem"></div>
+
+        <div id="arkivSmakinger">
+          <p class="hjelp" style="margin-top:1.5rem">Smakinger fra den gamle poengbasen. Poengene hører til initialene som ble brukt den gangen, og de teller med i snittet under VS, VSOP og XO.</p>
+
+          <div id="adminImport" hidden>
+            <button class="knapp stille liten" id="knappImport" type="button">Importer smakinger</button>
+            <form id="skjemaImport" hidden style="margin-top:1.25rem">
+              <div class="felt">
+                <label for="importData">Data som JSON</label>
+                <textarea id="importData" rows="8" placeholder='{"medlemmer": {...}, "smakinger": [...]}'></textarea>
+                <p class="hjelp">Samme smaking kan importeres flere ganger uten å bli liggende dobbelt.</p>
+              </div>
+              <button class="knapp" type="submit">Importer</button>
+            </form>
+          </div>
+
+          <div class="sortering">
+            <button class="sortvalg" type="button" data-sort="dato" aria-current="true">Nyeste først</button>
+            <button class="sortvalg" type="button" data-sort="snitt">Beste først</button>
+          </div>
+          <div id="listeArkiv" style="margin-top:1rem"></div>
         </div>
-        <div id="listeArkiv" style="margin-top:1rem"></div>
+
+        <div id="arkivBlending" hidden>
+          <p class="hjelp" style="margin-top:1.5rem">Blendinger fra den gamle poengbasen. Der er bare treff og bom notert, ikke hva den enkelte gjettet eller hvilken karakter som ble gitt.</p>
+
+          <div id="adminImportBlending" hidden>
+            <button class="knapp stille liten" id="knappImportBlending" type="button">Importer blendinger</button>
+            <form id="skjemaImportBlending" hidden style="margin-top:1.25rem">
+              <div class="felt">
+                <label for="importBlendingData">Data som JSON</label>
+                <textarea id="importBlendingData" rows="8" placeholder='{"medlemmer": {...}, "blendinger": [...]}'></textarea>
+                <p class="hjelp">Samme blending kan importeres flere ganger uten å bli liggende dobbelt.</p>
+              </div>
+              <button class="knapp" type="submit">Importer</button>
+            </form>
+          </div>
+
+          <div id="listeArkivBlending" style="margin-top:1.5rem"></div>
+
+          <h3 style="margin-top:2.5rem">Treffprosent i arkivet</h3>
+          <div id="listeArkivRangering"></div>
+        </div>
       </div>
 
       <div class="boks" id="panelBlending" hidden>
@@ -487,19 +522,13 @@
         <h3 style="margin-top:2.5rem">Treffprosent</h3>
         <div id="listeRangering"></div>
 
-        <h3 style="margin-top:2.5rem">Tidligere blendinger</h3>
-        <p class="hjelp">Fra den gamle poengbasen. Der er bare treff og bom notert, ikke hva den enkelte gjettet.</p>
-        <div id="listeArkivBlending"></div>
-
-        <h3 style="margin-top:2.5rem">Treffprosent i arkivet</h3>
-        <div id="listeArkivRangering"></div>
       </div>
     </section>
   </main>
 
   <footer class="bunn">
     Spørsmål om medlemskap eller registrerte opplysninger rettes til admin. Du kan når som helst be om å bli slettet fra registeret.
-    <span class="versjon">Versjon 1.0</span>
+    <span class="versjon">Versjon 1.1</span>
   </footer>
 </div>
 
@@ -1059,7 +1088,6 @@ function tegnBlending() {
   }
 
   tegnRangering();
-  tegnBlendingArkiv();
 }
 
 function blendingDetalj(b) {
@@ -1450,8 +1478,23 @@ function arkivNavnFor(init) {
   return arkivNavn[init] ? arkivNavn[init] + " (" + init + ")" : init;
 }
 
+document.querySelectorAll(".arkivfane").forEach(b => {
+  b.addEventListener("click", () => {
+    const del = b.dataset.del;
+    $("arkivSmakinger").hidden = del !== "smakinger";
+    $("arkivBlending").hidden = del !== "blending";
+    document.querySelectorAll(".arkivfane").forEach(x => {
+      x.setAttribute("aria-current", String(x.dataset.del === del));
+    });
+    melding("meldingArkiv", "");
+    if (del === "blending") tegnBlendingArkiv();
+  });
+});
+
 function tegnArkiv() {
   $("adminImport").hidden = !erAdmin;
+  $("adminImportBlending").hidden = !erAdmin;
+  tegnBlendingArkiv();
   const boks = $("listeArkiv");
   boks.textContent = "";
 
@@ -1565,11 +1608,19 @@ function arkivId(dato, cognac, klasse) {
     .slice(0, 120);
 }
 
-$("skjemaImport").addEventListener("submit", async (e) => {
+$("knappImportBlending").addEventListener("click", () => {
+  const form = $("skjemaImportBlending");
+  form.hidden = !form.hidden;
+});
+
+$("skjemaImportBlending").addEventListener("submit", (e) => importer(e, "importBlendingData"));
+$("skjemaImport").addEventListener("submit", (e) => importer(e, "importData"));
+
+async function importer(e, feltId) {
   e.preventDefault();
   const knapp = e.target.querySelector("button");
   let data;
-  const tekst = $("importData").value.trim();
+  const tekst = $(feltId).value.trim();
   if (!tekst) return melding("meldingArkiv", "Feltet er tomt. Lim inn innholdet fra importfilen.", "feil");
   try {
     data = JSON.parse(tekst);
@@ -1616,8 +1667,8 @@ $("skjemaImport").addEventListener("submit", async (e) => {
     await lastArkiv();
     await lastBlendingArkiv();
     await skrivSammendrag();
-    $("importData").value = "";
-    $("skjemaImport").hidden = true;
+    $(feltId).value = "";
+    e.target.hidden = true;
     melding("meldingArkiv", [
       rader.length ? rader.length + " smakinger" : "",
       gamle.length ? gamle.length + " blendinger" : ""
@@ -1628,7 +1679,7 @@ $("skjemaImport").addEventListener("submit", async (e) => {
   } finally {
     knapp.disabled = false;
   }
-});
+}
 
 /* ---------- Ruting ---------- */
 onAuthStateChanged(auth, async (bruker) => {
