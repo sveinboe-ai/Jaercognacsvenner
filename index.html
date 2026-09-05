@@ -163,6 +163,10 @@
   .valgbar{cursor:pointer}
   .valgbar:hover .tittel{color:var(--kobber)}
   .detalj{margin:1.25rem 0 0;padding:1.1rem 0 0;border-top:2px solid var(--kobber)}
+  .jccmerke{
+    flex-shrink:0;font-size:.7rem;letter-spacing:.06em;
+    padding:.1rem .4rem;border:1px solid var(--xo);color:var(--xo);
+  }
   .klubb{margin:.2rem 0 0;font-size:.85rem;color:var(--kobber)}
   .antall{font-family:Karla,sans-serif;font-size:.9rem;color:var(--dempet)}
 
@@ -498,6 +502,7 @@ function menyTilgjengelig(paa) {
   document.querySelectorAll(".menyvalg").forEach(b => {
     const personlig = ["profil", "medlemmer"].includes(b.dataset.panel);
     if (personlig) b.hidden = !paa;
+    else if (b.dataset.panel === "Blending") b.hidden = !(paa && erJcc);
     else b.disabled = !paa;
     if (!paa) b.removeAttribute("aria-current");
   });
@@ -522,6 +527,7 @@ async function lagreProfil(uid, { navn, mobil, epost, klubb }) {
   await setDoc(doc(db, "medlemmer", uid), {
     navn, mobil, epost,
     klubb: klubb || "",
+    jcc: false,
     status: "aktiv",
     rolle: "medlem",
     innmeldt: serverTimestamp()
@@ -702,7 +708,46 @@ function kort(m) {
   }
 
   rad.append(merke, info);
+
+  if (m.jcc) {
+    const stempel = document.createElement("span");
+    stempel.className = "jccmerke";
+    stempel.textContent = "JCC";
+    rad.append(stempel);
+  }
+
+  if (erAdmin && m.id !== minUid) {
+    const knapp = document.createElement("button");
+    knapp.className = "knapp stille liten";
+    knapp.type = "button";
+    knapp.style.marginLeft = "auto";
+    knapp.textContent = m.jcc ? "Fjern JCC" : "Gjør til JCC";
+    knapp.addEventListener("click", async () => {
+      knapp.disabled = true;
+      try {
+        await updateDoc(doc(db, "medlemmer", m.id), { jcc: !m.jcc });
+        m.jcc = !m.jcc;
+        tegnMedlemsliste();
+      } catch (err) {
+        melding("meldingMedlem", feiltekst(err), "feil");
+        knapp.disabled = false;
+      }
+    });
+    rad.append(knapp);
+  }
+
   return rad;
+}
+
+function tegnMedlemsliste() {
+  const boks = $("listeAktive");
+  boks.textContent = "";
+  if (!medlemmer.length) {
+    boks.append(tomtSvar("Ingen medlemmer registrert ennå."));
+  } else {
+    medlemmer.forEach(m => boks.append(kort(m)));
+  }
+  $("tittelMedlemmer").innerHTML = "Medlemmer <span class=\"antall\">(" + medlemmer.length + ")</span>";
 }
 
 
@@ -711,6 +756,7 @@ async function tegnMedlem(bruker) {
   if (!snap.exists()) { vis("visFullfor"); return; }
   const meg = snap.data();
   erAdmin = meg.rolle === "admin";
+  erJcc = erAdmin || meg.jcc === true;
   minUid = bruker.uid;
 
   vis("visMedlem");
@@ -741,22 +787,13 @@ async function tegnMedlem(bruker) {
   treff.forEach(d => alle.push({ id: d.id, ...d.data() }));
   medlemmer = alle;
   try {
-    await lastBlendinger();
+    if (erJcc) await lastBlendinger();
+    await lastSammendrag();
   } catch (err) {
-    blendinger = [];
+    if (!erJcc) blendinger = [];
   }
 
-  const boks = $("listeAktive");
-  boks.textContent = "";
-  if (!alle.length) {
-    const p = document.createElement("p");
-    p.className = "hjelp";
-    p.textContent = "Ingen medlemmer registrert ennå.";
-    boks.append(p);
-  } else {
-    alle.forEach(m => boks.append(kort(m)));
-  }
-  $("tittelMedlemmer").innerHTML = "Medlemmer <span class=\"antall\">(" + alle.length + ")</span>";
+  tegnMedlemsliste();
 }
 
 /* ---------- Blending ---------- */
@@ -767,8 +804,10 @@ async function tegnMedlem(bruker) {
 let blendinger = [];
 let medlemmer = [];
 let erAdmin = false;
+let erJcc = false;
 let apenBlending = null;
 let minUid = null;
+let sammendrag = {};
 
 const GLASS = ["A", "B", "C"];
 
@@ -792,6 +831,49 @@ async function lastBlendinger() {
   const treff = await getDocs(collection(db, "blendinger"));
   treff.forEach(d => blendinger.push({ id: d.id, ...d.data() }));
   blendinger.sort((a, b) => (b.dato || "").localeCompare(a.dato || ""));
+}
+
+// Snittkarakter per cognac i én klasse, høyeste først.
+function klasseTabell(klasse) {
+  const samlet = {};
+  blendinger
+    .filter(b => b.klassifisering === klasse)
+    .forEach(b => {
+      GLASS.forEach(g => {
+        const navn = b.fasit[g];
+        if (!samlet[navn]) samlet[navn] = { poeng: [], ganger: 0 };
+        samlet[navn].ganger += 1;
+        Object.keys(b.svar || {}).forEach(uid => {
+          const sv = b.svar[uid][g];
+          if (sv && typeof sv.poeng === "number") samlet[navn].poeng.push(sv.poeng);
+        });
+      });
+    });
+  return Object.keys(samlet)
+    .map(navn => {
+      const d = samlet[navn];
+      const snitt = d.poeng.length ? d.poeng.reduce((a, b) => a + b, 0) / d.poeng.length : null;
+      return { navn, snitt, antall: d.poeng.length, ganger: d.ganger };
+    })
+    .sort((a, b) => (b.snitt || 0) - (a.snitt || 0));
+}
+
+// Admin skriver de tre beste i hver klasse dit medlemmene kan lese dem.
+async function skrivSammendrag() {
+  for (const klasse of ["VS", "VSOP", "XO"]) {
+    const topp = klasseTabell(klasse)
+      .filter(c => c.snitt !== null)
+      .slice(0, 3)
+      .map(c => ({ navn: c.navn, snitt: c.snitt, antall: c.antall }));
+    await setDoc(doc(db, "sammendrag", klasse), { topp, oppdatert: serverTimestamp() });
+    sammendrag[klasse] = topp;
+  }
+}
+
+async function lastSammendrag() {
+  sammendrag = {};
+  const treff = await getDocs(collection(db, "sammendrag"));
+  treff.forEach(d => { sammendrag[d.id] = d.data().topp || []; });
 }
 
 function rettePoeng(b, uid) {
@@ -896,14 +978,6 @@ function blendingDetalj(b) {
   if (erAdmin) {
     boks.append(svarSkjema(b, null));
     boks.append(slettKnapp(b));
-  } else if (!(b.svar || {})[minUid]) {
-    boks.append(svarSkjema(b, minUid));
-  } else {
-    const laast = document.createElement("p");
-    laast.className = "hjelp";
-    laast.style.marginTop = "1.25rem";
-    laast.textContent = "Svaret ditt er lagret og kan ikke endres. Trenger du å rette noe, ta kontakt med admin.";
-    boks.append(laast);
   }
   return boks;
 }
@@ -1011,9 +1085,8 @@ function svarSkjema(b, fastUid) {
       await updateDoc(doc(db, "blendinger", b.id), { ["svar." + uid]: svar });
       b.svar = b.svar || {};
       b.svar[uid] = svar;
-      melding("meldingBlending", fastUid
-        ? "Svaret ditt er lagret."
-        : "Svaret til " + navnPa(uid) + " er lagret.", "ok");
+      await skrivSammendrag();
+      melding("meldingBlending", "Svaret til " + navnPa(uid) + " er lagret.", "ok");
       tegnBlending();
     } catch (err) {
       melding("meldingBlending", feiltekst(err), "feil");
@@ -1045,6 +1118,7 @@ function slettKnapp(b) {
       await deleteDoc(doc(db, "blendinger", b.id));
       blendinger = blendinger.filter(x => x.id !== b.id);
       apenBlending = null;
+      await skrivSammendrag();
       melding("meldingBlending", "Blendingen er slettet.", "ok");
       tegnBlending();
     } catch (err) {
@@ -1134,48 +1208,26 @@ function tegnKlasse(klasse) {
     return;
   }
 
-  const samlet = {};
-  blendinger
-    .filter(b => b.klassifisering === klasse)
-    .forEach(b => {
-      GLASS.forEach(g => {
-        const navn = b.fasit[g];
-        if (!samlet[navn]) samlet[navn] = { poeng: [], ganger: 0 };
-        samlet[navn].ganger += 1;
-        Object.keys(b.svar || {}).forEach(uid => {
-          const s = b.svar[uid][g];
-          if (s && typeof s.poeng === "number") samlet[navn].poeng.push(s.poeng);
-        });
-      });
-    });
-
-  const navn = Object.keys(samlet);
-  if (!navn.length) {
-    boks.append(tomtSvar("Ingen " + klasse + " er smakt ennå. Karakterene kommer hit fra blendingene."));
+  const rader = erJcc ? klasseTabell(klasse) : (sammendrag[klasse] || []);
+  if (!rader.length) {
+    boks.append(tomtSvar("Ingen " + klasse + " er kåret ennå. Listen fylles ut etter hvert som Jæren Cognac Club smaker seg gjennom klassen."));
     return;
   }
 
   const innledning = document.createElement("p");
   innledning.className = "hjelp";
-  innledning.textContent = "Snittkarakter fra blendingene, høyeste først.";
+  innledning.textContent = erJcc
+    ? "Snittkarakter fra blendingene, høyeste først."
+    : "De tre beste i klassen, kåret av Jæren Cognac Club.";
   boks.append(innledning);
 
-  navn
-    .map(n => {
-      const d = samlet[n];
-      const snitt = d.poeng.length ? d.poeng.reduce((a, b) => a + b, 0) / d.poeng.length : null;
-      return { navn: n, snitt, antall: d.poeng.length, ganger: d.ganger };
-    })
-    .sort((a, b) => (b.snitt || 0) - (a.snitt || 0))
-    .forEach(c => {
-      boks.append(radElement(
-        c.navn,
-        c.antall
-          ? c.antall + (c.antall === 1 ? " karakter" : " karakterer") + ", smakt " + c.ganger + (c.ganger === 1 ? " gang" : " ganger")
-          : "Ingen karakterer lagt inn",
-        c.snitt === null ? "–" : tall(c.snitt)
-      ));
-    });
+  rader.forEach(c => {
+    const under = c.antall
+      ? c.antall + (c.antall === 1 ? " karakter" : " karakterer")
+        + (c.ganger ? ", smakt " + c.ganger + (c.ganger === 1 ? " gang" : " ganger") : "")
+      : "Ingen karakterer lagt inn";
+    boks.append(radElement(c.navn, under, c.snitt === null || c.snitt === undefined ? "–" : tall(c.snitt)));
+  });
 }
 
 /* ---------- Ruting ---------- */
