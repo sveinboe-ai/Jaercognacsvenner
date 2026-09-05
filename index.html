@@ -139,6 +139,12 @@
   }
   select:focus{outline:none;border-bottom-color:var(--kobber);box-shadow:0 1px 0 var(--kobber)}
 
+  .framgang{
+    margin:0 0 1.75rem;padding:0 0 0 1.2rem;
+    font-size:.92rem;color:var(--dempet);max-width:31rem;
+  }
+  .framgang li{margin-bottom:.45rem;padding-left:.2rem}
+  .framgang li::marker{color:var(--kobber)}
   .rad{display:flex;align-items:baseline;gap:.9rem;padding:.7rem 0;border-bottom:1px solid var(--linje)}
   .rad:last-child{border-bottom:0}
   .rad .venstre{flex:1;min-width:0}
@@ -359,7 +365,12 @@
 
       <div class="boks" id="panelBlending" hidden>
         <h3>Blending</h3>
-        <p class="hjelp">Tre glass fra samme klasse, A til C fra venstre. Du gjetter hvilken cognac som står hvor, og gir hver av dem en karakter fra 1,00 til 6,00.</p>
+        <ol class="framgang">
+          <li>Tre glass fra samme klasse settes fram, A til C fra venstre. Ingen vet hva som står hvor.</li>
+          <li>Alle noterer på papir hva de tror hvert glass er, og gir hvert glass en karakter fra 1,00 til 6,00.</li>
+          <li>Admin legger inn blendingen med fasiten, og taster inn svarene fra lappene mens dere sitter samlet.</li>
+          <li>Treffprosent og klassetabell regner seg ut selv. Antall rette blir 0, 1 eller 3 — to rette er umulig når tre skal parres.</li>
+        </ol>
 
         <div id="meldingBlending" class="melding" hidden></div>
 
