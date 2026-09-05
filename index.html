@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.1 – 5. september 2026 -->
+     Versjon 1.2 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -522,13 +522,17 @@
         <h3 style="margin-top:2.5rem">Treffprosent</h3>
         <div id="listeRangering"></div>
 
+        <h3 style="margin-top:2.5rem">Treffprosent i arkivet</h3>
+        <p class="hjelp">Fra den gamle poengbasen, 2019 til 2026. Regnet av glassene hver enkelt faktisk har smakt — vertskvelder og fravær holdes utenfor.</p>
+        <div id="listeArkivRangeringBlending"></div>
+
       </div>
     </section>
   </main>
 
   <footer class="bunn">
     Spørsmål om medlemskap eller registrerte opplysninger rettes til admin. Du kan når som helst be om å bli slettet fra registeret.
-    <span class="versjon">Versjon 1.1</span>
+    <span class="versjon">Versjon 1.2</span>
   </footer>
 </div>
 
@@ -1088,6 +1092,7 @@ function tegnBlending() {
   }
 
   tegnRangering();
+  tegnArkivRangering("listeArkivRangeringBlending");
 }
 
 function blendingDetalj(b) {
@@ -1363,7 +1368,16 @@ function tegnBlendingArkiv() {
     });
   }
 
-  // Treffprosent gjennom hele arkivet
+  tegnArkivRangering("listeArkivRangering");
+  tegnArkivRangering("listeArkivRangeringBlending");
+}
+
+// Treffprosent gjennom hele arkivet. Tegnes både under Arkiv og under Blending.
+function tegnArkivRangering(elId) {
+  const boks = $(elId);
+  if (!boks) return;
+  boks.textContent = "";
+
   const sum = {};
   blendingArkiv.forEach(b => {
     Object.keys(b.resultat || {}).forEach(init => {
@@ -1373,18 +1387,17 @@ function tegnBlendingArkiv() {
       sum[init].runder += 1;
     });
   });
-  const rangering = $("listeArkivRangering");
-  rangering.textContent = "";
+
   const alle = Object.keys(sum);
   if (!alle.length) {
-    rangering.append(tomtSvar("Ingen treffprosent å regne ut ennå."));
+    boks.append(tomtSvar("Ingen treffprosent å regne ut ennå."));
     return;
   }
   alle
     .map(init => ({ init, ...sum[init], prosent: (sum[init].rette / sum[init].glass) * 100 }))
     .sort((a, b) => b.prosent - a.prosent || b.rette - a.rette)
     .forEach(r => {
-      rangering.append(radElement(
+      boks.append(radElement(
         arkivNavnFor(r.init),
         r.rette + " rette av " + r.glass + " glass, " + r.runder + (r.runder === 1 ? " blending" : " blendinger"),
         tall(r.prosent, 0) + " %"
