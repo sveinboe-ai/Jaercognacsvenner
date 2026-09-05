@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.11 – 5. september 2026 -->
+     Versjon 1.12 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -551,7 +551,7 @@
 
   <footer class="bunn">
     Spørsmål om medlemskap eller registrerte opplysninger rettes til admin. Du kan når som helst be om å bli slettet fra registeret.
-    <span class="versjon">Versjon 1.11</span>
+    <span class="versjon">Versjon 1.12</span>
   </footer>
 </div>
 
@@ -1658,6 +1658,7 @@ let arkivNavn = {};
 let arkivTitler = {};
 let arkivTillegg = {};
 let arkivStart = {};
+let arkivSlutt = {};
 
 async function lastArkiv() {
   historikk = [];
@@ -1687,6 +1688,12 @@ async function lastArkiv() {
     arkivStart = t.exists() ? t.data() : {};
   } catch (_) {
     arkivStart = {};
+  }
+  try {
+    const t = await getDoc(doc(db, "arkiv", "slutt"));
+    arkivSlutt = t.exists() ? t.data() : {};
+  } catch (_) {
+    arkivSlutt = {};
   }
 }
 
@@ -1848,6 +1855,15 @@ function arSiden(iso) {
   return Math.max(ar, 0);
 }
 
+function arMellom(fra, til) {
+  const a = new Date(fra), b = new Date(til);
+  let ar = b.getFullYear() - a.getFullYear();
+  const passert = b.getMonth() > a.getMonth()
+    || (b.getMonth() === a.getMonth() && b.getDate() >= a.getDate());
+  if (!passert) ar -= 1;
+  return Math.max(ar, 0);
+}
+
 function tegnAnsiennitet() {
   const boks = $("listeAnsiennitet");
   boks.textContent = "";
@@ -1867,20 +1883,32 @@ function tegnAnsiennitet() {
     return;
   }
 
-  alle
-    .map(init => {
-      const oppgitt = arkivStart[init];
-      const dato = oppgitt || funnet[init];
-      return { init, dato, oppgitt: Boolean(oppgitt), ar: arSiden(dato) };
-    })
-    .sort((a, b) => (a.dato || "").localeCompare(b.dato || ""))
-    .forEach(r => {
-      boks.append(settUtnevnte(radElement(
-        arkivNavnFor(r.init),
-        (r.oppgitt ? "Medlem siden " : "Første registrering ") + norskDato(r.dato),
-        r.ar + (r.ar === 1 ? " år" : " år")
-      ), r.init));
+  const rader = alle.map(init => {
+    const oppgitt = arkivStart[init];
+    const dato = oppgitt || funnet[init];
+    const slutt = arkivSlutt[init] || null;
+    return {
+      init, dato, slutt, oppgitt: Boolean(oppgitt),
+      ar: slutt ? arMellom(dato, slutt) : arSiden(dato)
+    };
+  }).sort((a, b) => (a.dato || "").localeCompare(b.dato || ""));
+
+  const skriv = (utvalg, overskrift) => {
+    if (!utvalg.length) return;
+    const h = document.createElement("h3");
+    h.textContent = overskrift;
+    h.style.marginTop = boks.children.length ? "2.5rem" : "0";
+    boks.append(h);
+    utvalg.forEach(r => {
+      const under = r.slutt
+        ? "Medlem " + norskDato(r.dato) + " til " + norskDato(r.slutt)
+        : (r.oppgitt ? "Medlem siden " : "Første registrering ") + norskDato(r.dato);
+      boks.append(settUtnevnte(radElement(arkivNavnFor(r.init), under, r.ar + " år"), r.init));
     });
+  };
+
+  skriv(rader.filter(r => !r.slutt), "Aktive");
+  skriv(rader.filter(r => r.slutt), "Tidligere medlemmer");
 }
 
 /* ---------- Import ---------- */
@@ -1928,7 +1956,8 @@ async function importer(e, feltId) {
   const harTillegg = data.tillegg && typeof data.tillegg === "object";
   const harNavn = data.medlemmer && typeof data.medlemmer === "object";
   const harStart = data.start && typeof data.start === "object";
-  if (!rader.length && !gamleBlendinger.length && !harTitler && !harTillegg && !harNavn && !harStart) {
+  const harSlutt = data.slutt && typeof data.slutt === "object";
+  if (!rader.length && !gamleBlendinger.length && !harTitler && !harTillegg && !harNavn && !harStart && !harSlutt) {
     return melding("meldingArkiv", "Fant verken smakinger eller blendinger i dataene.", "feil");
   }
 
@@ -1946,6 +1975,9 @@ async function importer(e, feltId) {
     }
     if (data.start && typeof data.start === "object") {
       await setDoc(doc(db, "arkiv", "start"), data.start, { merge: true });
+    }
+    if (data.slutt && typeof data.slutt === "object") {
+      await setDoc(doc(db, "arkiv", "slutt"), data.slutt, { merge: true });
     }
     for (const r of rader) {
       if (!r.cognac || !r.dato || !r.klassifisering) continue;
@@ -1978,7 +2010,8 @@ async function importer(e, feltId) {
       harTitler ? Object.keys(data.titler).length + " titler" : "",
       harTillegg ? Object.keys(data.tillegg).length + " tillegg" : "",
       harNavn ? Object.keys(data.medlemmer).length + " navn" : "",
-      harStart ? Object.keys(data.start).length + " startdatoer" : ""
+      harStart ? Object.keys(data.start).length + " startdatoer" : "",
+      harSlutt ? Object.keys(data.slutt).length + " sluttdatoer" : ""
     ].filter(Boolean).join(" og ") + " er importert.", "ok");
     tegnArkiv();
   } catch (err) {
