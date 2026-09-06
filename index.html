@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.24 – 5. september 2026 -->
+     Versjon 1.27 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -86,6 +86,7 @@
   /* Faner */
   .knapprad{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:2rem}
   #forside p{max-width:34rem}
+  .ingress{font-size:1.15rem;line-height:1.55;margin-top:.5rem}
   .faner{display:flex;gap:1.5rem;border-bottom:1px solid var(--linje);margin-bottom:1.75rem}
   .fane{background:none;border:0;padding:.4rem 0 .7rem;margin-bottom:-1px;font:inherit;
     color:var(--dempet);cursor:pointer;border-bottom:2px solid transparent}
@@ -220,7 +221,12 @@
   .klubb{margin:.2rem 0 0;font-size:.85rem;color:var(--kobber)}
   .antall{font-family:Karla,sans-serif;font-size:.9rem;color:var(--dempet)}
 
-  .versjon{margin:1.5rem 0 0;font-size:.78rem;color:var(--linje)}
+  .ansvarlig{
+    margin:2.5rem 0 0;padding-top:1.25rem;border-top:1px solid var(--linje);
+    font-size:.85rem;color:var(--dempet);
+  }
+  .bunn + .ansvarlig{margin-top:1.25rem;padding-top:0;border-top:0}
+  .versjon{margin:.6rem 0 0;font-size:.78rem;color:var(--linje)}
   .bunn{margin-top:3.5rem;padding-top:1.25rem;border-top:1px solid var(--linje);
     font-size:.85rem;color:var(--dempet);max-width:30rem}
 
@@ -330,11 +336,7 @@
     <section id="visGjest" hidden>
 
       <div id="forside">
-        <h2>Om klubben</h2>
-        <p>Jærcognacens venner samler folk på Jæren som liker cognac og vil vite mer om den. Vi smaker sammen, setter ord på det vi kjenner, og noterer hva vi mener — år etter år.</p>
-        <p>Kjernen er blindsmakingen. Tre glass settes fram uten at noen vet hva som er i dem. Hver enkelt gjetter hvilken cognac som står hvor, og gir hvert glass en karakter fra 1,00 til 6,00. Slik blir dommen om selve cognacen fri fra hva som står på etiketten, og en gammel favoritt kan like gjerne falle igjennom.</p>
-        <p>Smakingene deles i klassene VS, VSOP og XO. Karakterene samles og gir en oversikt over hvor de forskjellige merkene står hos oss — bygget opp siden 2006.</p>
-        <p>Som medlem får du innkalling til samlingene og tilgang til medlemslista. Medlemmer av Jæren Cognac Club ser i tillegg hele smakshistorikken og alle blendingene.</p>
+        <p class="ingress">Jærcognacens venner er å dele informasjon sammen. Arrangere samlinger om det passer. Eller dele erfaringer og gode cognacsmaker. Ingen forpliktelser.</p>
 
         <div class="knapprad">
           <button class="knapp" id="knappBliMedlem" type="button">Bli medlem</button>
@@ -582,7 +584,8 @@
     Spørsmål om medlemskap eller registrerte opplysninger rettes til admin. Du kan når som helst be om å bli slettet fra registeret.
   </footer>
 
-  <p class="versjon" id="versjonslinje">Versjon 1.24</p>
+  <p class="ansvarlig">Ansvarlig for siden er Jæren Cognac Club.</p>
+  <p class="versjon" id="versjonslinje">Versjon 1.27</p>
 </div>
 
 <script type="module">
