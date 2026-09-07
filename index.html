@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.30 – 5. september 2026 -->
+     Versjon 1.32 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -184,6 +184,12 @@
   }
   textarea:focus{outline:none;border-color:var(--kobber)}
   .sortering{display:flex;gap:1.25rem;margin-top:1.5rem}
+  .matfane{
+    font:inherit;font-size:.95rem;background:none;border:0;padding:.2rem 0;
+    color:var(--dempet);cursor:pointer;border-bottom:2px solid transparent;
+  }
+  .matfane[aria-current="true"]{color:var(--blekk);border-bottom-color:var(--kobber)}
+  .matfane:focus-visible{outline:2px solid var(--kobber);outline-offset:3px}
   .arkivfane{
     font:inherit;font-size:.95rem;background:none;border:0;padding:.2rem 0;
     color:var(--dempet);cursor:pointer;border-bottom:2px solid transparent;
@@ -290,7 +296,7 @@
     <button class="menyvalg tekstvalg" type="button" data-panel="medlemmer" hidden>Medlemmer</button>
     <button class="menyvalg tekstvalg" type="button" data-panel="arkiv" hidden>Arkiv</button>
     <button class="menyvalg tekstvalg" type="button" data-panel="ansiennitet" hidden>Ansiennitet</button>
-    <button class="menyvalg tekstvalg" type="button" data-panel="vedtekter" hidden>Vedtekter</button>
+    <button class="menyvalg tekstvalg" type="button" data-panel="vedtekter" hidden>Matrikkel</button>
     <button class="menyvalg tekstvalg" type="button" data-panel="botregler" hidden>Botregler</button>
   </nav>
 
@@ -485,9 +491,15 @@
       </div>
 
       <div class="boks" id="panelVedtekter" hidden>
-        <h3>Vedtekter</h3>
+        <h3>Matrikkel</h3>
 
-        <p class="hjelp">Styret er sammensatt av følgende personer:</p>
+        <div class="sortering" style="margin-top:.5rem">
+          <button class="matfane" type="button" data-del="vedtekter" aria-current="true">Vedtekter</button>
+          <button class="matfane" type="button" data-del="maal">Målsetting og verdier</button>
+        </div>
+
+        <div id="matVedtekter" style="margin-top:1.75rem">
+                <p class="hjelp">Styret er sammensatt av følgende personer:</p>
         <ul class="styre">
           <li><span>Styreformann</span> Valg etter 1 år</li>
           <li><span>Styremedlem 1</span> Valg etter 2 år</li>
@@ -508,14 +520,17 @@
           <section><h4>§ 10</h4><p>Ingen klubbmedlemmer har rett til å kreve tilbakebetalt bøter, kontingenter eller andre innbetalinger hvis vedkommende medlem slutter.</p></section>
         </div>
 
+        </div>
+
+        <div id="matMaal" hidden style="margin-top:1.75rem">
+                <p class="sitat">Få «JærCognac» som en salgsvare er den motiverende driveren i klubben. Ambisjonen er søkelys på økt mangfold og kunnskap.</p>
+        <p class="hjelp">Verdiene til JCC er SMK — samhold, mangfold og kunnskap.</p>
+
+        </div>
       </div>
 
       <div class="boks" id="panelBotregler" hidden>
         <h3>Botregler</h3>
-        <h3 style="margin-top:0">Mål og verdier</h3>
-        <p class="sitat">Få «JærCognac» som en salgsvare er den motiverende driveren i klubben. Ambisjonen er søkelys på økt mangfold og kunnskap.</p>
-        <p class="hjelp">Verdiene til JCC er SMK — samhold, mangfold og kunnskap.</p>
-
         
         <p class="hjelp">Godkjent på årsmøtet 17.02.2023. Sosialministeren følger opp det praktiske i møtene. Bøter kunngjøres før den offisielle delen av møtet avsluttes av leder. Kassereren har ansvar for å kreve dem inn.</p>
         <div class="botliste">
@@ -693,7 +708,7 @@
   </footer>
 
   <p class="ansvarlig">Ansvarlig for siden er Jæren Cognac Club.</p>
-  <p class="versjon" id="versjonslinje">Versjon 1.30</p>
+  <p class="versjon" id="versjonslinje">Versjon 1.32</p>
 </div>
 
 <script type="module">
@@ -1870,6 +1885,17 @@ function arkivNavnFor(init) {
   const tillegg = arkivTillegg[(init || "").toUpperCase()];
   return tillegg ? grunn + " " + tillegg : grunn;
 }
+
+document.querySelectorAll(".matfane").forEach(b => {
+  b.addEventListener("click", () => {
+    const del = b.dataset.del;
+    $("matVedtekter").hidden = del !== "vedtekter";
+    $("matMaal").hidden = del !== "maal";
+    document.querySelectorAll(".matfane").forEach(x => {
+      x.setAttribute("aria-current", String(x.dataset.del === del));
+    });
+  });
+});
 
 document.querySelectorAll(".arkivfane").forEach(b => {
   b.addEventListener("click", () => {
