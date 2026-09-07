@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.27 – 5. september 2026 -->
+     Versjon 1.28 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -125,6 +125,18 @@
   [hidden]{display:none !important}
 
   .boks{margin-bottom:2.5rem}
+  .styre{list-style:none;margin:0 0 2rem;padding:0}
+  .styre li{
+    display:flex;gap:1rem;padding:.5rem 0;border-bottom:1px solid var(--linje);
+    font-size:.95rem;
+  }
+  .styre li span{flex:1;font-weight:500}
+  .paragrafer section{margin-bottom:1.5rem;max-width:34rem}
+  .paragrafer h4{
+    margin:0 0 .2rem;font-family:"Bodoni Moda",Georgia,serif;
+    font-weight:400;font-size:1.05rem;color:var(--kobber);
+  }
+  .paragrafer p{margin:0}
   .velkomst{margin:1.5rem 0 1.75rem;padding-top:1.4rem;border-top:1px solid var(--linje);max-width:32rem}
 
   /* Medlemmer */
@@ -266,6 +278,7 @@
     <button class="menyvalg tekstvalg" type="button" data-panel="medlemmer" hidden>Medlemmer</button>
     <button class="menyvalg tekstvalg" type="button" data-panel="arkiv" hidden>Arkiv</button>
     <button class="menyvalg tekstvalg" type="button" data-panel="ansiennitet" hidden>Ansiennitet</button>
+    <button class="menyvalg tekstvalg" type="button" data-panel="vedtekter" hidden>Vedtekter</button>
   </nav>
 
   <header>
@@ -458,6 +471,31 @@
         <div id="listeAktive"></div>
       </div>
 
+      <div class="boks" id="panelVedtekter" hidden>
+        <h3>Vedtekter</h3>
+
+        <p class="hjelp">Styret er sammensatt av følgende personer:</p>
+        <ul class="styre">
+          <li><span>Styreformann</span> Valg etter 1 år</li>
+          <li><span>Styremedlem 1</span> Valg etter 2 år</li>
+          <li><span>Styremedlem 2</span> Valg etter 2 år</li>
+          <li><span>Kasserer</span> Valg etter 2 år</li>
+        </ul>
+
+        <div class="paragrafer">
+          <section><h4>§ 1</h4><p>Styreformann er valgt for 1 år, styremedlemmene er valgt for 2 år.</p></section>
+          <section><h4>§ 2</h4><p>Styret har ansvaret for innsamling og innkreving av kontingenter og bøter. Styret har rett til å sette ut nye bøter som ikke er vedtatt. Er det store overtredelser av sunn fornuft ved svinn av cognac, kan dette bøtelegges.</p></section>
+          <section><h4>§ 3</h4><p>Antall medlemmer i klubben er satt til 10 stk. Det kan vurderes nye medlemmer hvis noen av de eksisterende medlemmene faller fra.</p></section>
+          <section><h4>§ 4</h4><p>Antall samlinger er satt til 5 stk. pr. år. Fredag er foretrukket dag. Det kan avtales ekstraordinært annen ukedag. Samlingen skal inneholde cognac og kaffe.</p></section>
+          <section><h4>§ 5</h4><p>Klubbens medlemmer kan drikke 2 flasker à 0,5 liter øl under sansen og ellers i møtet. Mineralvann kan nytes, men ikke blandes.</p></section>
+          <section><h4>§ 6</h4><p>Samlingene skal inneholde et punkt om kunnskap om produktet cognac. Det skal alltid være nye merker eller klassifiseringer til smakssansen. Det skal bare være én smaksseanse pr. samling, eller én klassifisering pr. samling.</p></section>
+          <section><h4>§ 7</h4><p>I saker som ikke er klart definert i vedtektene, er styrets avgjørelse enerådig.</p></section>
+          <section><h4>§ 8</h4><p>Antrekk: skjorte med klubbens navn og sorte bukser.</p></section>
+          <section><h4>§ 9</h4><p>Møtelokalet skal rullere mellom klubbmedlemmene, og skal avtales i årsmøtet.</p></section>
+          <section><h4>§ 10</h4><p>Ingen klubbmedlemmer har rett til å kreve tilbakebetalt bøter, kontingenter eller andre innbetalinger hvis vedkommende medlem slutter.</p></section>
+        </div>
+      </div>
+
       <div class="boks" id="panelAnsiennitet" hidden>
         <h3>Ansiennitet</h3>
         <p class="hjelp">Hvor lenge hver enkelt har vært med, regnet fram til i dag. Der startdato ikke er lagt inn, brukes den første registreringen i basen.</p>
@@ -585,7 +623,7 @@
   </footer>
 
   <p class="ansvarlig">Ansvarlig for siden er Jæren Cognac Club.</p>
-  <p class="versjon" id="versjonslinje">Versjon 1.27</p>
+  <p class="versjon" id="versjonslinje">Versjon 1.28</p>
 </div>
 
 <script type="module">
@@ -657,6 +695,7 @@ function apnePanel(navn) {
   $("panelMedlemmer").hidden = navn !== "medlemmer";
   $("panelArkiv").hidden = navn !== "arkiv";
   $("panelAnsiennitet").hidden = navn !== "ansiennitet";
+  $("panelVedtekter").hidden = navn !== "vedtekter";
   $("panelKlasse").hidden = !erKlasse;
   $("panelBlending").hidden = navn !== "Blending";
   if (erKlasse) { $("klasseTittel").textContent = navn; tegnKlasse(navn); }
@@ -677,7 +716,7 @@ function menyTilgjengelig(paa) {
   document.querySelectorAll(".menyvalg").forEach(b => {
     const personlig = ["profil", "medlemmer"].includes(b.dataset.panel);
     if (personlig) b.hidden = !paa;
-    else if (b.dataset.panel === "arkiv" || b.dataset.panel === "ansiennitet") b.hidden = !(paa && erJcc);
+    else if (["arkiv", "ansiennitet", "vedtekter"].includes(b.dataset.panel)) b.hidden = !(paa && erJcc);
     else if (b.dataset.panel === "Blending") {
       b.hidden = !(paa && erJcc);
       b.disabled = !(paa && erJcc);
@@ -984,7 +1023,7 @@ async function tegnMedlem(bruker) {
 
   vis("visMedlem");
   menyTilgjengelig(true);
-  if ($("panelProfil").hidden && $("panelMedlemmer").hidden && $("panelKlasse").hidden && $("panelBlending").hidden && $("panelArkiv").hidden && $("panelAnsiennitet").hidden) apnePanel("profil");
+  if ($("panelProfil").hidden && $("panelMedlemmer").hidden && $("panelKlasse").hidden && $("panelBlending").hidden && $("panelArkiv").hidden && $("panelAnsiennitet").hidden && $("panelVedtekter").hidden) apnePanel("profil");
   $("hilsen").textContent = "Hei, " + meg.navn.split(" ")[0];
   $("minInfo").textContent = penMobil(meg.mobil);
   $("minEpost").textContent = meg.epost;
