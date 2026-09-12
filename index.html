@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.33 – 5. september 2026 -->
+     Versjon 1.34 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -36,7 +36,7 @@
   /* Ryggraden: fargeskalaen løper loddrett langs hele siden */
   .ramme{
     position:relative;max-width:37rem;margin:0 auto;
-    padding:2.5rem 1.25rem 4rem 1.6rem;
+    padding:1.5rem 1.25rem 4rem 1.6rem;
   }
   .ramme::before{
     content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
@@ -58,10 +58,17 @@
   /* Glassene: hero og meny i ett */
   .meny{margin:2rem 0 2.25rem}
   .glassrad{display:flex;gap:.35rem;flex-wrap:wrap}
+  /* Følger med når du ruller, så du alltid ser hvor du er */
   .verktoy{
+    position:sticky;top:0;z-index:10;
     display:flex;gap:1.4rem;flex-wrap:wrap;
-    padding-bottom:.85rem;margin-bottom:2rem;
+    padding:.9rem 0 .85rem;margin-bottom:2rem;
+    background:var(--papir);
     border-bottom:1px solid var(--linje);
+  }
+  .verktoy::before{
+    content:"";position:absolute;left:-2.5rem;right:-1.25rem;top:0;bottom:0;
+    background:var(--papir);z-index:-1;
   }
   .menyvalg{font:inherit;background:none;border:0;padding:0;cursor:pointer;color:var(--dempet)}
   .menyvalg:focus-visible{outline:2px solid var(--kobber);outline-offset:3px}
@@ -708,7 +715,7 @@
   </footer>
 
   <p class="ansvarlig">Ansvarlig for siden er Jæren Cognac Club.</p>
-  <p class="versjon" id="versjonslinje">Versjon 1.33</p>
+  <p class="versjon" id="versjonslinje">Versjon 1.34</p>
 </div>
 
 <script type="module">
