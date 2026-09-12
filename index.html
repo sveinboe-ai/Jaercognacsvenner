@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.32 – 5. september 2026 -->
+     Versjon 1.33 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -708,7 +708,7 @@
   </footer>
 
   <p class="ansvarlig">Ansvarlig for siden er Jæren Cognac Club.</p>
-  <p class="versjon" id="versjonslinje">Versjon 1.32</p>
+  <p class="versjon" id="versjonslinje">Versjon 1.33</p>
 </div>
 
 <script type="module">
@@ -1725,8 +1725,89 @@ function tegnRangering() {
         merke.textContent = tittel.navn;
         rad.insertBefore(merke, rad.lastChild);
       }
+      if (r.init) {
+        rad.classList.add("valgbar");
+        rad.addEventListener("click", () => {
+          apenPerson = apenPerson === r.init ? null : r.init;
+          tegnRangering();
+        });
+      }
       boks.append(rad);
+      if (r.init && apenPerson === r.init) boks.append(personDetalj(r.init));
     });
+}
+
+let apenPerson = null;
+
+// Alt vi vet om én person: karakterer i arkivet og hver blending
+function personDetalj(init) {
+  const boks = document.createElement("div");
+  boks.className = "detalj";
+
+  const mine = [];
+  historikk.forEach(h => {
+    const p = (h.poeng || {})[init];
+    if (typeof p === "number") mine.push(p);
+  });
+  if (mine.length) {
+    const snitt = mine.reduce((a, b) => a + b, 0) / mine.length;
+    const sammendrag = document.createElement("p");
+    sammendrag.className = "hjelp";
+    sammendrag.style.margin = "0 0 1rem";
+    sammendrag.textContent = mine.length + " karakterer i arkivet, snitt " + tall(snitt) + ".";
+    boks.append(sammendrag);
+  }
+
+  const runder = [];
+  blendingArkiv.forEach(b => {
+    const res = (b.resultat || {})[init];
+    if (!res) return;
+    runder.push({
+      dato: b.dato, klasse: b.klassifisering, rette: arkivRette(b, init),
+      glass: GLASS.filter(g => res[g]).map(g => ({
+        cognac: b.fasit[g], rett: res[g] === "rett", gjett: null, poeng: null
+      }))
+    });
+  });
+  blendinger.forEach(b => {
+    const medlem = medlemmer.find(m => (m.initialer || "").toUpperCase() === init);
+    const svar = medlem ? (b.svar || {})[medlem.id] : null;
+    if (!svar) return;
+    runder.push({
+      dato: b.dato, klasse: b.klassifisering, rette: rettePoeng(b, medlem.id),
+      glass: GLASS.map(g => ({
+        cognac: b.fasit[g],
+        rett: Boolean(svar[g] && svar[g].gjett === b.fasit[g]),
+        gjett: svar[g] ? svar[g].gjett : null,
+        poeng: svar[g] ? svar[g].poeng : null
+      }))
+    });
+  });
+
+  if (!runder.length) {
+    boks.append(tomtSvar("Ingen blendinger registrert på denne personen."));
+    return boks;
+  }
+
+  runder
+    .sort((a, b) => (b.dato || "").localeCompare(a.dato || ""))
+    .forEach(r => {
+      const rad = radElement(norskDato(r.dato) + " · " + r.klasse, "", r.rette + "/3");
+      if (r.rette === 3) rad.querySelector(".tall").classList.add("rett");
+      boks.append(rad);
+      r.glass.forEach(g => {
+        const linje = radElement(
+          (g.rett ? "✓ " : "✗ ") + g.cognac,
+          g.gjett && !g.rett ? "Gjettet " + g.gjett : "",
+          g.poeng ? tall(g.poeng) : ""
+        );
+        linje.style.paddingLeft = "1.2rem";
+        linje.querySelector(".tittel").classList.add(g.rett ? "rett" : "bom");
+        boks.append(linje);
+      });
+    });
+
+  return boks;
 }
 
 /* ---------- Klassetabellene: VS, VSOP, XO ---------- */
