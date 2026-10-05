@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.35 – 5. september 2026 -->
+     Versjon 1.36 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -494,6 +494,13 @@
 
       <div class="boks" id="panelMedlemmer" hidden>
         <h3 id="tittelMedlemmer">Medlemmer</h3>
+
+        <div id="adminEpost" hidden style="margin-bottom:1.5rem">
+          <button class="knapp stille liten" id="knappKopierEpost" type="button">Kopier alle e-postadresser</button>
+          <p class="hjelp" style="margin:.6rem 0 0">Lim dem inn i Bcc-feltet, ikke Til — da ser ikke medlemmene hverandres adresser.</p>
+          <textarea id="epostListe" rows="3" hidden style="margin-top:.75rem"></textarea>
+        </div>
+
         <div id="listeAktive"></div>
       </div>
 
@@ -715,7 +722,7 @@
   </footer>
 
   <p class="ansvarlig">Ansvarlig for siden er Jæren Cognac Club.</p>
-  <p class="versjon" id="versjonslinje">Versjon 1.35</p>
+  <p class="versjon" id="versjonslinje">Versjon 1.36</p>
 </div>
 
 <script type="module">
@@ -1116,6 +1123,7 @@ function kort(m) {
 }
 
 function tegnMedlemsliste() {
+  $("adminEpost").hidden = !erAdmin;
   const boks = $("listeAktive");
   boks.textContent = "";
   if (!medlemmer.length) {
@@ -1183,6 +1191,23 @@ async function tegnMedlem(bruker) {
 
   tegnMedlemsliste();
 }
+
+/* ---------- Send e-post til alle ---------- */
+$("knappKopierEpost").addEventListener("click", async () => {
+  const adresser = medlemmer.map(m => m.epost).filter(Boolean).join(", ");
+  if (!adresser) return melding("meldingMedlem", "Ingen e-postadresser å kopiere.", "feil");
+  try {
+    await navigator.clipboard.writeText(adresser);
+    melding("meldingMedlem", medlemmer.length + " adresser er kopiert. Lim dem inn i Bcc-feltet.", "ok");
+  } catch (_) {
+    // Noen nettlesere nekter å skrive til utklippstavlen; vis dem i stedet
+    const felt = $("epostListe");
+    felt.value = adresser;
+    felt.hidden = false;
+    felt.select();
+    melding("meldingMedlem", "Merk teksten under og kopier den selv.", "ok");
+  }
+});
 
 /* ---------- Blending ---------- */
 // En blending er tre glass, A til C, fra samme klasse. Fasiten sier hvilken
