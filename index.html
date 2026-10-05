@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Jærcognacens venner – medlemsregister
-     Versjon 1.36 – 5. september 2026 -->
+     Versjon 1.37 – 5. september 2026 -->
 <html lang="nb">
 <head>
 <meta charset="utf-8">
@@ -722,7 +722,7 @@
   </footer>
 
   <p class="ansvarlig">Ansvarlig for siden er Jæren Cognac Club.</p>
-  <p class="versjon" id="versjonslinje">Versjon 1.36</p>
+  <p class="versjon" id="versjonslinje">Versjon 1.37</p>
 </div>
 
 <script type="module">
@@ -1194,7 +1194,8 @@ async function tegnMedlem(bruker) {
 
 /* ---------- Send e-post til alle ---------- */
 $("knappKopierEpost").addEventListener("click", async () => {
-  const adresser = medlemmer.map(m => m.epost).filter(Boolean).join(", ");
+  // Semikolon er skilletegnet Outlook forventer
+  const adresser = medlemmer.map(m => m.epost).filter(Boolean).join("; ");
   if (!adresser) return melding("meldingMedlem", "Ingen e-postadresser å kopiere.", "feil");
   try {
     await navigator.clipboard.writeText(adresser);
